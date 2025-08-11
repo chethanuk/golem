@@ -48,6 +48,7 @@ test-r = { workspace = true }
 [build-dependencies]
 prost-build = { version = "0.13.5", optional = true }
 cargo_metadata = "0.19.2"
+protoc-bin-vendored = "3"
 
 [features]
 default = ["host", "extra-bindings"]

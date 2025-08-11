@@ -39,8 +39,11 @@ pub struct SqliteDb {
 
 impl SqliteDb {
     pub async fn new() -> Self {
-        tempfile::tempfile().unwrap();
-        let db_path = format!("/tmp/golem-registry-{}.db", Uuid::new_v4());
+        // Create the DB file inside the system temp directory so the tests work on
+        // every OS (including Windows which does not have /tmp).
+        let mut path = std::env::temp_dir();
+        path.push(format!("golem-registry-{}.db", Uuid::new_v4()));
+        let db_path = path.to_string_lossy().to_string();
         let db_config = DbSqliteConfig {
             database: db_path.clone(),
             max_connections: 3,
@@ -65,7 +68,8 @@ impl SqliteDb {
 
 impl Drop for SqliteDb {
     fn drop(&mut self) {
-        std::fs::remove_file(&self.db_path).unwrap();
+        // Best-effort cleanup; ignore errors (e.g. file already removed/locked).
+        let _ = std::fs::remove_file(&self.db_path);
     }
 }
 

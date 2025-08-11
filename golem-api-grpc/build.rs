@@ -8,6 +8,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let wasm_rpc_root = find_package_root("golem-wasm-rpc");
     let wasm_ast_root = find_package_root("golem-wasm-ast");
 
+    // Use vendored `protoc` so that an external installation is not required
+    // (important for Windows and CI environments).
+    let protoc_path = protoc_bin_vendored::protoc_bin_path().expect("protoc not found");
+    std::env::set_var("PROTOC", protoc_path);
+
     tonic_build::configure()
         .file_descriptor_set_path(out_dir.join("services.bin"))
         .extern_path(".wasm.rpc", "::golem_wasm_rpc::protobuf")
