@@ -21,6 +21,10 @@ To work on **Golem** you need to install (via package installers or manually) th
 brew install rustup protobuf redis docker lnav nginx
 ```
 
+### Windows
+See [`docs/windows-setup.md`](docs/windows-setup.md) for a native Windows setup (no WSL required).  
+The guide covers installing Visual Studio Build Tools, CMake, Rust via mise, and how to run `cargo build` / `cargo test` on Windows.
+
 ## Rust Installation
 ```sh
 # latest **stable** rust compiler

@@ -519,3 +519,33 @@ jobs:
           SLACK_MESSAGE: "Publish - cargo result: `${{ needs.publish.result }}`, docker result: `${{ needs.docker-publish.result }}`"
           SLACK_USERNAME: CI
           SLACK_WEBHOOK: ${{ secrets.SLACK_ALERT_URL }}
+
+  windows-build-and-unit-tests:
+    runs-on: windows-2022
+    env:
+      CARGO_BUILD_JOBS: 4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile default --no-self-update
+          rustup default stable
+          rustup target add wasm32-wasip1
+
+      - uses: useblacksmith/rust-cache@v3
+        with:
+          prefix-key: v3-rust
+          shared-key: windows
+          cache-all-crates: true
+          save-if: false
+
+      - name: Build (workspace)
+        run: cargo build --workspace
+
+      - name: Unit tests (library only)
+        run: cargo test --workspace --lib -- --nocapture
