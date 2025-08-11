@@ -523,7 +523,7 @@ jobs:
   windows-build-and-unit-tests:
     runs-on: windows-2022
     env:
-      CARGO_BUILD_JOBS: 4
+      CARGO_BUILD_JOBS: 2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -545,7 +545,11 @@ jobs:
           save-if: false
 
       - name: Build (workspace)
-        run: cargo build --workspace
+        env:
+          RUSTFLAGS: -Ccodegen-units=8 -C debuginfo=1
+        run: cargo build --workspace -j 2
 
       - name: Unit tests (library only)
-        run: cargo test --workspace --lib -- --nocapture
+        env:
+          RUSTFLAGS: -Ccodegen-units=8 -C debuginfo=1
+        run: cargo test --workspace --lib -j 2 -- --nocapture
