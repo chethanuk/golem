@@ -61,6 +61,14 @@ cargo build --workspace
 cargo test --workspace --lib -- --nocapture
 ```
 
+On machines with limited RAM you may need to build with lower parallelism to
+avoid linker or LLVM out-of-memory errors:
+
+```powershell
+cargo build --workspace -j 2
+cargo test  --workspace --lib -j 2 -- --nocapture
+```
+
 If you run into linker errors for SQLite on Windows, ensure the VS Build Tools step completed successfully; the project uses SQLx with SQLite support and compiles C code as needed via MSVC.
 
 ## 5) Optional: Docker Desktop and act
@@ -83,9 +91,18 @@ Notes
 * Open a **new terminal** after tool installs to refresh PATH.  
 * If `cargo` is not found, check `%USERPROFILE%\.cargo\bin` is in PATH.  
 * If `protoc` errors appear, this repo vendors `protoc`; no system install is required.  
-* For slow builds, limit jobs in `%USERPROFILE%\.cargo\config.toml`:
+* Out-of-memory (OOM) or `STATUS_STACK_BUFFER_OVERRUN` during compilation:  
+  • Close other heavy applications.  
+  • Build with fewer jobs, e.g. `cargo build -j 2`.  
+  • The repository already provides a `.cargo/config.toml` with a safe default:  
 
-  ```toml
-  [build]
-  jobs = 4
-  ```
+    ```toml
+    [build]
+    jobs = 2
+    ```  
+    Increase or decrease this to match your hardware.  
+  • You can also reduce per-crate code-generation memory:  
+
+    ```powershell
+    set RUSTFLAGS=-Ccodegen-units=8
+    ```

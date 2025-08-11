@@ -29,3 +29,5 @@ data
 .vscode/
 .cursorrules
 .cursorignore
+plan.md
+unit_test_results.log
