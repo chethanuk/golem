@@ -5,7 +5,14 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - droid/windows-paths-and-protoc
   pull_request:
+  workflow_dispatch:
+    inputs:
+      run_reason:
+        description: 'Reason for running this workflow manually'
+        required: false
+        default: 'Manual trigger from Actions tab'  
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
