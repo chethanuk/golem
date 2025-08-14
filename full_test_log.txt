@@ -1,0 +1,95 @@
+﻿cargo : DEBUG Version: 2025.8.9 windows-x64 (2025-08-13)
+At line:1 char:24
++ ... OG="debug"; cargo test --package golem-worker-executor --test 
+integra ...
++                 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (DEBUG Version: ...64 (2025-0 
+   8-13):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DEBUG ARGS: mise x -- cargo test --package golem-worker-executor --test 
+integration shopping_cart_example -- --nocapture --test-threads=1 
+--timeout=30
+DEBUG config: C:\Users\Administrator\golem\.mise.toml
+DEBUG $ C:\Users\Administrator\.cargo\bin\cargo.exe test --package 
+golem-worker-executor --test integration shopping_cart_example -- 
+--nocapture --test-threads=1 --timeout=30
+warning: golem-wasm-ast@0.0.0: Prepended to PATH: C:\Users\Administrator\.
+cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored-wi
+n32-3.2.0\bin
+warning: golem-wasm-ast@0.0.0: Vendored protoc path: C:\Users\Administrato
+r\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored
+-win32-3.2.0\bin\protoc.exe
+warning: golem-wasm-ast@0.0.0: Vendored protoc exists: true
+warning: golem-wasm-ast@0.0.0: PROTOC env var: Some("C:\\Users\\Administra
+tor\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\protoc-bin-v
+endored-win32-3.2.0\\bin\\protoc.exe")
+warning: golem-wasm-ast@0.0.0: protoc --version status: exit code: 0
+warning: golem-wasm-ast@0.0.0: protoc stdout: libprotoc 31.1
+warning: golem-wasm-ast@0.0.0: protoc stderr:
+warning: golem-wasm-rpc@0.0.0: Prepended to PATH: C:\Users\Administrator\.
+cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored-wi
+n32-3.2.0\bin
+warning: golem-wasm-rpc@0.0.0: Vendored protoc path: C:\Users\Administrato
+r\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored
+-win32-3.2.0\bin\protoc.exe
+warning: golem-wasm-rpc@0.0.0: Vendored protoc exists: true
+warning: golem-wasm-rpc@0.0.0: PROTOC env var: Some("C:\\Users\\Administra
+tor\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\protoc-bin-v
+endored-win32-3.2.0\\bin\\protoc.exe")
+warning: golem-wasm-rpc@0.0.0: protoc --version status: exit code: 0
+warning: golem-wasm-rpc@0.0.0: protoc stdout: libprotoc 31.1
+warning: golem-wasm-rpc@0.0.0: protoc stderr:
+warning: golem-common@0.0.0: git describe failed, using fallback version 
+0.0.0
+warning: golem-common@0.0.0: git stderr: fatal: No names found, cannot 
+describe anything.
+warning: unused import: 
+`crate::compatibility::worker_recovery::save_recovery_golden_file`
+  --> golem-worker-executor\tests\api.rs:16:5
+   |
+16 | use crate::compatibility::worker_recovery::save_recovery_golden_file;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `golem-worker-executor` (test "integration") generated 1 warning 
+(run `cargo fix --test "integration"` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.04s
+     Running tests\lib.rs 
+(target\debug\deps\integration-815edfd0c9bd1279.exe)
+error: unexpected argument '--timeout' found
+
+  tip: to pass '--timeout' as a value, use '-- --timeout'
+
+Usage: integration-815edfd0c9bd1279.exe --nocapture --test-threads 
+<TEST_THREADS> <FILTER>
+
+For more information, try '--help'.
+error: test failed, to rerun pass `-p golem-worker-executor --test 
+integration`
+
+Caused by:
+  process didn't exit successfully: `C:\Users\Administrator\golem\target\d
+ebug\deps\integration-815edfd0c9bd1279.exe shopping_cart_example 
+--nocapture --test-threads=1 --timeout=30` (exit code: 2)
+Error: 
+   0: [91mcommand failed: exit code 2[0m
+
+Location:
+   [35msrc\cli\exec.rs[0m:[35m155[0m
+
+Version:
+   2025.8.9 windows-x64 (2025-08-13)
+
+  ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü
+ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü BACKTRACE ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü
+ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü
+   1: [32mBaseThreadInitThunk[0m[90m<unknown>[0m
+      at [35m<unknown source file>[0m:[35m<unknown line>[0m
+   2: [91mRtlUserThreadStart[0m[90m<unknown>[0m
+      at [35m<unknown source file>[0m:[35m<unknown line>[0m
+
+Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame 
+filtering.

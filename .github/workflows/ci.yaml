@@ -600,6 +600,135 @@ jobs:
       - name: Check configs are up to date
         run: cargo make --profile ci check-configs
 
+  # Comprehensive Windows cargo make task testing matrix
+  windows-cargo-make-matrix:
+    runs-on: windows-2022
+    continue-on-error: true  # Don't fail the workflow on individual task failures
+    strategy:
+      fail-fast: false  # Test all tasks even if some fail
+      matrix:
+        task:
+          # Core Development Workflow
+          - "dev-flow"
+          # Build Tools
+          - "build"
+          - "build-release"
+          - "wit"
+          - "check-wit"
+          # Code Quality Tools
+          - "check"
+          - "fix"
+          # Testing Tools
+          - "unit-tests"
+          - "test"
+          - "worker-executor-tests"
+          - "integration-tests"
+          - "sharding-tests-debug"
+          # API Testing Tools
+          - "api-tests-http"
+          - "api-tests-grpc"
+          # Configuration Tools
+          - "generate-configs"
+          - "check-configs"
+          # OpenAPI Tools
+          - "generate-openapi"
+          - "check-openapi"
+          # Service Tools
+          - "run"
+          - "run-with-login-enabled"
+          # Docker Tools (optional)
+          - "elastic-up"
+          - "elastic-stop"
+          - "elastic-down"
+          # Publishing
+          - "publish"
+    env:
+      CARGO_BUILD_JOBS: 4
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: 1
+      GOLEM_USE_LOCAL_REDIS: "false"  # Use Testcontainers Redis by default
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Install winget (required for Windows dependency installation)
+        uses: Cyberboss/install-winget@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Windows dependencies via winget
+        run: |
+          # Verify winget is available
+          winget --version
+          
+          # Install Visual Studio Build Tools (C++ toolchain)
+          winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" --accept-source-agreements --accept-package-agreements --disable-interactivity
+          
+          # Install CMake
+          winget install --id Kitware.CMake -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+          
+          # Install Podman for Testcontainers Redis
+          winget install --id RedHat.Podman -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+          
+          # Install Docker Desktop (optional, for docker-based tasks)
+          winget install --id Docker.DockerDesktop -e --accept-source-agreements --accept-package-agreements --disable-interactivity || echo "Docker install failed, continuing..."
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile default --no-self-update
+          rustup default stable
+          rustup target add wasm32-wasip1
+
+      - name: Install cargo-make
+        run: cargo install cargo-make
+
+      - name: Rust cache
+        uses: useblacksmith/rust-cache@v3
+        with:
+          prefix-key: v3-rust
+          shared-key: windows-matrix
+          cache-all-crates: true
+          save-if: false
+
+      - name: Test cargo make task - ${{ matrix.task }}
+        continue-on-error: true  # Don't fail individual steps
+        run: |
+          echo "::group::Testing cargo make ${{ matrix.task }}"
+          $start_time = Get-Date
+          try {
+            cargo make ${{ matrix.task }}
+            $exit_code = $LASTEXITCODE
+            $end_time = Get-Date
+            $duration = ($end_time - $start_time).TotalSeconds
+            if ($exit_code -eq 0) {
+              echo "✅ SUCCESS: cargo make ${{ matrix.task }} (${duration}s, exit code: $exit_code)"
+            } else {
+              echo "❌ FAILED: cargo make ${{ matrix.task }} (${duration}s, exit code: $exit_code)"
+            }
+          } catch {
+            $end_time = Get-Date
+            $duration = ($end_time - $start_time).TotalSeconds
+            echo "💥 ERROR: cargo make ${{ matrix.task }} (${duration}s, exception: $_)"
+          }
+          echo "::endgroup::"
+
+      - name: Collect test results
+        if: always()
+        run: |
+          echo "Task: ${{ matrix.task }}" >> windows-task-results.txt
+          echo "Exit Code: $LASTEXITCODE" >> windows-task-results.txt
+          echo "---" >> windows-task-results.txt
+
+      - name: Upload task results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-task-results-${{ matrix.task }}
+          path: windows-task-results.txt
+
       # Produce JSON test output and convert to JUnit
       - name: Run tests to JSON (for report)
         shell: bash

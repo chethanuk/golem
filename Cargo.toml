@@ -241,7 +241,7 @@ strum_macros = "0.27.1"
 system-interface = "0.27.3"
 tap = "1.0.1"
 tempfile = "3.18.0"
-testcontainers = { version = "0.23.3" }
+testcontainers = { version = "0.23.3", features = ["blocking"] }
 testcontainers-modules = { version = "0.11.6", features = [
     "postgres",
     "redis",

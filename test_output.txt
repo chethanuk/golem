@@ -1,0 +1,268 @@
+cargo : DEBUG Version: 2025.8.9 windows-x64 (2025-08-13)
+At line:1 char:60
++ ... lyContinue; cargo test --package golem-worker-executor --test integra ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (DEBUG Version: ...64 (2025-0    8-13):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+DEBUG ARGS: mise x -- cargo test --package golem-worker-executor --test integration shopping_cart_example -- --nocapture --test-threads=1
+DEBUG config: C:\Users\Administrator\golem\.mise.toml
+DEBUG $ C:\Users\Administrator\.cargo\bin\cargo.exe test --package golem-worker-executor --test integration shopping_cart_example -- --nocapture --test-threads=1
+warning: golem-wasm-ast@0.0.0: Prepended to PATH: C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored-win32-3.2.0\bin
+warning: golem-wasm-ast@0.0.0: Vendored protoc path: C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored-win32-3.2.0\bin\protoc.exe
+warning: golem-wasm-ast@0.0.0: Vendored protoc exists: true
+warning: golem-wasm-ast@0.0.0: PROTOC env var: Some("C:\\Users\\Administrator\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\protoc-bin-vendored-win32-3.2.0\\bin\\protoc.exe")
+warning: golem-wasm-ast@0.0.0: protoc --version status: exit code: 0
+warning: golem-wasm-ast@0.0.0: protoc stdout: libprotoc 31.1
+warning: golem-wasm-ast@0.0.0: protoc stderr:
+warning: golem-wasm-rpc@0.0.0: Prepended to PATH: C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored-win32-3.2.0\bin
+warning: golem-wasm-rpc@0.0.0: Vendored protoc path: C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\protoc-bin-vendored-win32-3.2.0\bin\protoc.exe
+warning: golem-wasm-rpc@0.0.0: Vendored protoc exists: true
+warning: golem-wasm-rpc@0.0.0: PROTOC env var: Some("C:\\Users\\Administrator\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\protoc-bin-vendored-win32-3.2.0\\bin\\protoc.exe")
+warning: golem-wasm-rpc@0.0.0: protoc --version status: exit code: 0
+warning: golem-wasm-rpc@0.0.0: protoc stdout: libprotoc 31.1
+warning: golem-wasm-rpc@0.0.0: protoc stderr:
+warning: golem-common@0.0.0: git describe failed, using fallback version 0.0.0
+warning: golem-common@0.0.0: git stderr: fatal: No names found, cannot describe anything.
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.93s
+     Running tests\lib.rs (target\debug\deps\integration-815edfd0c9bd1279.exe)
+Running 2 tests
+
+  [32m INFO[0m [1;32mgolem_test_framework::components::redis::spawned[0m[32m: [32mStarting Redis on port 6379[0m
+    [2;3mat[0m golem-test-framework\src\components\redis\spawned.rs:43
+
+  [31mERROR[0m [1;31mgolem_common::tracing[0m[31m: [31mpanic, [1;31mpanic_info[0m[31m: panicked at golem-test-framework\src\components\redis\spawned.rs:56:14:
+Failed to spawn redis server: Error { kind: NotFound, message: "program not found" }, [1;31mpanic_backtrace[0m[31m:    0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\..\..\backtrace\src\backtrace\win64.rs:85
+   1: std::backtrace_rs::backtrace::trace_unsynchronized
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\..\..\backtrace\src\backtrace\mod.rs:66
+   2: std::backtrace::Backtrace::create
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\backtrace.rs:331
+   3: std::backtrace::Backtrace::capture
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\backtrace.rs:296
+   4: golem_common::tracing::init_tracing::closure$1<golem_common::tracing::filter::for_all_outputs::default_debug_env::closure_env$0>
+             at C:\Users\Administrator\golem\golem-common\src\tracing.rs:401
+   5: std::panicking::rust_panic_with_hook
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:841
+   6: std::panicking::begin_panic_handler::closure$0
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:706
+   7: std::sys::backtrace::__rust_end_short_backtrace<std::panicking::begin_panic_handler::closure_env$0,never$>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\sys\backtrace.rs:168
+   8: std::panicking::begin_panic_handler
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:697
+   9: core::panicking::panic_fmt
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\core\src\panicking.rs:75
+  10: core::result::unwrap_failed
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\core\src\result.rs:1761
+  11: enum2$<core::result::Result<std::process::Child,std::io::error::Error> >::expect<std::process::Child,std::io::error::Error>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\result.rs:1119
+  12: golem_test_framework::components::redis::spawned::SpawnedRedis::new
+             at C:\Users\Administrator\golem\golem-test-framework\src\components\redis\spawned.rs:56
+  13: integration::impl$1::new::async_fn$0
+             at .\tests\lib.rs:138
+  14: integration::test_dependencies::async_fn$0
+             at .\tests\lib.rs:250
+  15: integration::test_r_register_dep_workerexecutortestdependencies::closure$0::async_block$0
+             at .\tests\lib.rs:248
+  16: core::future::future::impl$1::poll<alloc::boxed::Box<dyn$<core::future::future::Future<assoc$<Output,alloc::sync::Arc<dyn$<core::any::Any,core::marker::Send,core::marker::Sync>,alloc::alloc::Global> > > >,alloc::alloc::Global> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\future\future.rs:124
+  17: test_r_core::execution::impl$0::materialize_deps::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\execution.rs:443
+  18: test_r_core::execution::impl$0::pick_next_internal::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\execution.rs:182
+  19: core::future::future::impl$1::poll<alloc::boxed::Box<enum2$<test_r_core::execution::impl$0::pick_next_internal::async_fn_env$0>,alloc::alloc::Global> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\future\future.rs:124
+  20: test_r_core::execution::impl$0::pick_next_internal::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\execution.rs:193
+  21: test_r_core::execution::impl$0::pick_next::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\execution.rs:132
+  22: test_r_core::tokio::pick_next::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\tokio.rs:246
+  23: test_r_core::tokio::test_thread::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\tokio.rs:173
+  24: core::future::future::impl$1::poll<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\future\future.rs:124
+  25: tokio::runtime::park::impl$4::block_on::closure$0<core::pin::Pin<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> > >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\park.rs:284
+  26: tokio::task::coop::with_budget
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\task\coop\mod.rs:167
+  27: tokio::task::coop::budget
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\task\coop\mod.rs:133
+  28: tokio::runtime::park::CachedParkThread::block_on<core::pin::Pin<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> > >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\park.rs:284
+  29: tokio::runtime::context::blocking::BlockingRegionGuard::block_on<core::pin::Pin<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> > >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\context\blocking.rs:66
+  30: tokio::runtime::handle::impl$0::block_on_inner::closure$0<core::pin::Pin<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> > >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\handle.rs:327
+  31: tokio::runtime::context::runtime::enter_runtime<tokio::runtime::handle::impl$0::block_on_inner::closure_env$0<core::pin::Pin<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> > >,tuple$<> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\context\runtime.rs:65
+  32: tokio::runtime::handle::Handle::block_on_inner<core::pin::Pin<alloc::boxed::Box<enum2$<test_r_core::tokio::test_thread::async_fn_env$0>,alloc::alloc::Global> > >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\handle.rs:326
+  33: tokio::runtime::handle::Handle::block_on<enum2$<test_r_core::tokio::test_thread::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\handle.rs:303
+  34: test_r_core::tokio::async_test_runner::async_fn$0::closure$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\tokio.rs:97
+  35: tokio::runtime::blocking::task::impl$2::poll<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0,tuple$<> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\blocking\task.rs:42
+  36: tokio::runtime::task::core::impl$6::poll::closure$0<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\core.rs:331
+  37: tokio::loom::std::unsafe_cell::UnsafeCell<enum2$<tokio::runtime::task::core::Stage<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0> > > >::with_mut
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\loom\std\unsafe_cell.rs:16
+  38: tokio::runtime::task::core::Core<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>::poll<tokio::runtime::blocking::task::BlockingTask<test_r_
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\core.rs:320
+  39: tokio::runtime::task::harness::poll_future::closure$0<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\harness.rs:532
+  40: core::panic::unwind_safe::impl$25::call_once<enum2$<core::task::poll::Poll<tuple$<> > >,tokio::runtime::task::harness::poll_future::closure_env$0<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\panic\unwind_safe.rs:272
+  41: std::panicking::catch_unwind::do_call<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::poll_future::closure_env$0<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio:
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\panicking.rs:589
+  42: hashbrown::control::group::sse2::Group::convert_special_to_empty_and_full_to_deleted
+  43: std::panicking::catch_unwind
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\panicking.rs:552
+  44: std::panic::catch_unwind<core::panic::unwind_safe::AssertUnwindSafe<tokio::runtime::task::harness::poll_future::closure_env$0<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blo
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\panic.rs:359
+  45: tokio::runtime::task::harness::poll_future<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\harness.rs:520
+  46: tokio::runtime::task::harness::Harness<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>::poll_inner<tokio::runtime::blocking::task::Blocking
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\harness.rs:209
+  47: tokio::runtime::task::harness::Harness<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>::poll<tokio::runtime::blocking::task::BlockingTask<t
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\harness.rs:154
+  48: tokio::runtime::task::raw::poll<tokio::runtime::blocking::task::BlockingTask<test_r_core::tokio::async_test_runner::async_fn$0::closure_env$0>,tokio::runtime::blocking::schedule::BlockingSchedule>
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\raw.rs:271
+  49: tokio::runtime::task::raw::RawTask::poll
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\raw.rs:201
+  50: tokio::runtime::task::UnownedTask<tokio::runtime::blocking::schedule::BlockingSchedule>::run<tokio::runtime::blocking::schedule::BlockingSchedule>
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\task\mod.rs:500
+  51: tokio::runtime::blocking::pool::Task::run
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\blocking\pool.rs:161
+  52: tokio::runtime::blocking::pool::Inner::run
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\blocking\pool.rs:511
+  53: tokio::runtime::blocking::pool::impl$6::spawn_thread::closure$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\blocking\pool.rs:469
+  54: core::hint::black_box
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\hint.rs:482
+  55: std::sys::backtrace::__rust_begin_short_backtrace<tokio::runtime::blocking::pool::impl$6::spawn_thread::closure_env$0,tuple$<> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\sys\backtrace.rs:152
+  56: std::thread::impl$0::spawn_unchecked_::closure$1::closure$0<tokio::runtime::blocking::pool::impl$6::spawn_thread::closure_env$0,tuple$<> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\thread\mod.rs:559
+  57: core::panic::unwind_safe::impl$25::call_once<tuple$<>,std::thread::impl$0::spawn_unchecked_::closure$1::closure_env$0<tokio::runtime::blocking::pool::impl$6::spawn_thread::closure_env$0,tuple$<> > >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\panic\unwind_safe.rs:272
+  58: std::panicking::catch_unwind::do_call<core::panic::unwind_safe::AssertUnwindSafe<std::thread::impl$0::spawn_unchecked_::closure$1::closure_env$0<tokio::runtime::blocking::pool::impl$6::spawn_thread::closure_env$0,tuple$<> > >,tuple$<> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\panicking.rs:589
+  59: tokio::sync::mutex::Mutex<tokio::fs::file::Inner>::get_mut<tokio::fs::file::Inner>
+  60: std::panicking::catch_unwind
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\panicking.rs:552
+  61: std::panic::catch_unwind
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\panic.rs:359
+  62: std::thread::impl$0::spawn_unchecked_::closure$1<tokio::runtime::blocking::pool::impl$6::spawn_thread::closure_env$0,tuple$<> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\thread\mod.rs:557
+  63: core::ops::function::FnOnce::call_once<std::thread::impl$0::spawn_unchecked_::closure_env$1<tokio::runtime::blocking::pool::impl$6::spawn_thread::closure_env$0,tuple$<> >,tuple$<> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\ops\function.rs:250
+  64: alloc::boxed::impl$28::call_once
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\alloc\src\boxed.rs:1966
+  65: alloc::boxed::impl$28::call_once
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\alloc\src\boxed.rs:1966
+  66: std::sys::pal::windows::thread::impl$0::new::thread_start
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\sys\pal\windows\thread.rs:60
+  67: BaseThreadInitThunk
+  68: RtlUserThreadStart
+[0m
+    [2;3mat[0m golem-common\src\tracing.rs:401
+
+  [31mERROR[0m [1;31mgolem_common::tracing[0m[31m: [31mpanic, [1;31mpanic_info[0m[31m: panicked at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\tokio.rs:108:21:
+Failed to join task: JoinError::Panic(Id(9), "Failed to spawn redis server: Error { kind: NotFound, message: \"program not found\" }", ...), [1;31mpanic_backtrace[0m[31m:    0: std::backtrace_rs::backtrace::win64::trace
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\..\..\backtrace\src\backtrace\win64.rs:85
+   1: std::backtrace_rs::backtrace::trace_unsynchronized
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\..\..\backtrace\src\backtrace\mod.rs:66
+   2: std::backtrace::Backtrace::create
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\backtrace.rs:331
+   3: std::backtrace::Backtrace::capture
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\backtrace.rs:296
+   4: golem_common::tracing::init_tracing::closure$1<golem_common::tracing::filter::for_all_outputs::default_debug_env::closure_env$0>
+             at C:\Users\Administrator\golem\golem-common\src\tracing.rs:401
+   5: std::panicking::rust_panic_with_hook
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:841
+   6: std::panicking::begin_panic_handler::closure$0
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:706
+   7: std::sys::backtrace::__rust_end_short_backtrace<std::panicking::begin_panic_handler::closure_env$0,never$>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\sys\backtrace.rs:168
+   8: std::panicking::begin_panic_handler
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:697
+   9: core::panicking::panic_fmt
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\core\src\panicking.rs:75
+  10: core::result::unwrap_failed
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\core\src\result.rs:1761
+  11: enum2$<core::result::Result<tuple$<>,tokio::runtime::task::error::JoinError> >::expect<tuple$<>,tokio::runtime::task::error::JoinError>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\result.rs:1119
+  12: test_r_core::tokio::async_test_runner::async_fn$0
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\tokio.rs:108
+  13: tokio::runtime::park::impl$4::block_on::closure$0<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\park.rs:284
+  14: tokio::task::coop::with_budget
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\task\coop\mod.rs:167
+  15: tokio::task::coop::budget
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\task\coop\mod.rs:133
+  16: tokio::runtime::park::CachedParkThread::block_on<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\park.rs:284
+  17: tokio::runtime::context::blocking::BlockingRegionGuard::block_on<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\context\blocking.rs:66
+  18: tokio::runtime::scheduler::multi_thread::impl$0::block_on::closure$0<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\scheduler\multi_thread\mod.rs:87
+  19: tokio::runtime::context::runtime::enter_runtime<tokio::runtime::scheduler::multi_thread::impl$0::block_on::closure_env$0<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >,std::process::ExitCode>
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\context\runtime.rs:65
+  20: tokio::runtime::scheduler::multi_thread::MultiThread::block_on<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\scheduler\multi_thread\mod.rs:86
+  21: tokio::runtime::runtime::Runtime::block_on_inner<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\runtime.rs:358
+  22: tokio::runtime::runtime::Runtime::block_on<enum2$<test_r_core::tokio::async_test_runner::async_fn_env$0> >
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tokio-1.45.1\src\runtime\runtime.rs:330
+  23: test_r_core::tokio::test_runner
+             at C:\Users\Administrator\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\test-r-core-4.0.0\src\tokio.rs:35
+  24: integration::main
+             at .\tests\lib.rs:70
+  25: core::ops::function::FnOnce::call_once<std::process::ExitCode (*)(),tuple$<> >
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\core\src\ops\function.rs:250
+  26: std::sys::backtrace::__rust_begin_short_backtrace<std::process::ExitCode (*)(),std::process::ExitCode>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\sys\backtrace.rs:152
+  27: std::rt::lang_start::closure$0<std::process::ExitCode>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\rt.rs:206
+  28: std::rt::lang_start_internal::closure$0
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\rt.rs:175
+  29: std::panicking::catch_unwind::do_call
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:589
+  30: std::panicking::catch_unwind
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panicking.rs:552
+  31: std::panic::catch_unwind
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\panic.rs:359
+  32: std::rt::lang_start_internal
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2/library\std\src\rt.rs:171
+  33: std::rt::lang_start<std::process::ExitCode>
+             at /rustc/29483883eed69d5fb4db01964cdf2af4d86e9cb2\library\std\src\rt.rs:205
+  34: main
+  35: invoke_main
+             at D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78
+  36: __scrt_common_main_seh
+             at D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+  37: BaseThreadInitThunk
+  38: RtlUserThreadStart
+[0m
+    [2;3mat[0m golem-common\src\tracing.rs:401
+
+error: test failed, to rerun pass `-p golem-worker-executor --test integration`
+Error: 
+   0: [91mcommand failed: exit code 101[0m
+
+Location:
+   [35msrc\cli\exec.rs[0m:[35m155[0m
+
+Version:
+   2025.8.9 windows-x64 (2025-08-13)
+
+  ?????????????????????????????????????????????????????????????????????????????????????????????????????? BACKTRACE 
+?????????????????????????????????????????????????????????????????????????????????????????????????????????
+   1: [32mBaseThreadInitThunk[0m[90m<unknown>[0m
+      at [35m<unknown source file>[0m:[35m<unknown line>[0m
+   2: [91mRtlUserThreadStart[0m[90m<unknown>[0m
+      at [35m<unknown source file>[0m:[35m<unknown line>[0m
+
+Run with COLORBT_SHOW_HIDDEN=1 environment variable to disable frame filtering.
