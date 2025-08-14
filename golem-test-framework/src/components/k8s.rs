@@ -124,14 +124,16 @@ impl AsyncDrop for ManagedService {
 }
 
 pub enum ManagedRouting {
-    Minikube { child: Option<Child> },
+    Minikube { child: Box<Option<Child>> },
     Ingress(ManagedIngress),
     Service,
 }
 
 impl ManagedRouting {
     pub fn minikube(child: Option<Child>) -> ManagedRouting {
-        ManagedRouting::Minikube { child }
+        ManagedRouting::Minikube {
+            child: Box::new(child),
+        }
     }
     pub fn ingress<S: Into<String>>(name: S, namespace: &K8sNamespace) -> ManagedRouting {
         ManagedRouting::Ingress(ManagedIngress::new(name, namespace))
@@ -144,12 +146,14 @@ impl ManagedRouting {
 #[async_trait]
 impl AsyncDrop for ManagedRouting {
     async fn async_drop(&mut self) {
-        if let ManagedRouting::Minikube { child: Some(child) } = self {
-            if let Some(pid) = child.id() {
-                info!("Killing minikube service tunnel process {:?}", child.id());
-                kill_tree::tokio::kill_tree(pid)
-                    .await
-                    .expect("Failed to kill minikube service tunnel");
+        if let ManagedRouting::Minikube { child } = self {
+            if let Some(child) = child.as_mut() {
+                if let Some(pid) = child.id() {
+                    info!("Killing minikube service tunnel process {:?}", child.id());
+                    kill_tree::tokio::kill_tree(pid)
+                        .await
+                        .expect("Failed to kill minikube service tunnel");
+                }
             }
         }
     }
@@ -255,7 +259,9 @@ impl Routing {
         Routing {
             hostname,
             port,
-            routing: AsyncDropper::new(ManagedRouting::Minikube { child }),
+            routing: AsyncDropper::new(ManagedRouting::Minikube {
+                child: Box::new(child),
+            }),
         }
     }
 
