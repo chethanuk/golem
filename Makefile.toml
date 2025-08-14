@@ -523,9 +523,10 @@ description = "Generates openapi spec for worker service"
 dependencies = ["build-worker-service"]
 script_runner = "@duckscript"
 script = '''
-cd target/debug
-mkdir ../data
-exec golem-worker-service.exe --dump-openapi-yaml > ../golem-worker-service.yaml
+mkdir target/data
+cd golem-worker-service
+result = exec ../target/debug/golem-worker-service.exe --dump-openapi-yaml
+writefile ../target/golem-worker-service.yaml ${result.stdout}
 '''
 
 [tasks.generate-component-service-openapi]
@@ -533,9 +534,10 @@ description = "Generates openapi spec for component service"
 dependencies = ["build-component-service"]
 script_runner = "@duckscript"
 script = '''
-cd target/debug
-mkdir ../data
-exec golem-component-service.exe --dump-openapi-yaml > ../golem-component-service.yaml
+mkdir target/data
+cd golem-component-service
+result = exec ../target/debug/golem-component-service.exe --dump-openapi-yaml
+writefile ../target/golem-component-service.yaml ${result.stdout}
 '''
 
 [tasks.generate-cloud-service-openapi]
@@ -543,9 +545,10 @@ description = "Generates openapi spec for cloud service"
 dependencies = ["build-cloud-service"]
 script_runner = "@duckscript"
 script = '''
-cd target/debug
-mkdir ../data
-exec cloud-service.exe --dump-openapi-yaml > ../cloud-spec.yaml
+mkdir target/data
+cd cloud-service
+result = exec ../target/debug/cloud-service.exe --dump-openapi-yaml
+writefile ../target/cloud-spec.yaml ${result.stdout}
 '''
 
 [tasks.generate-registry-service-openapi]
@@ -553,9 +556,9 @@ description = "Generates openapi spec for registry service"
 dependencies = ["build-registry-service"]
 script_runner = "@duckscript"
 script = '''
-cd target/debug
-mkdir ../data
-exec golem-registry-service.exe --dump-openapi-yaml > ../registry-service.yaml
+mkdir target/data
+result = exec ./target/debug/golem-registry-service.exe --dump-openapi-yaml
+writefile target/registry-service.yaml ${result.stdout}
 '''
 
 [tasks.merge-openapi]
