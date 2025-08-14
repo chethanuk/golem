@@ -694,24 +694,30 @@ jobs:
           save-if: false
 
       - name: Test cargo make task - ${{ matrix.task }}
-        continue-on-error: true  # Don't fail individual steps
+        id: cargo_task
         run: |
           echo "::group::Testing cargo make ${{ matrix.task }}"
           $start_time = Get-Date
+          $exit_code = 0
           try {
             cargo make ${{ matrix.task }}
             $exit_code = $LASTEXITCODE
             $end_time = Get-Date
             $duration = ($end_time - $start_time).TotalSeconds
             if ($exit_code -eq 0) {
-              echo "✅ SUCCESS: cargo make ${{ matrix.task }} (${duration}s, exit code: $exit_code)"
+              echo "✅ SUCCESS: cargo make ${{ matrix.task }} (${duration}s)"
+              echo "result=success" >> $env:GITHUB_OUTPUT
             } else {
               echo "❌ FAILED: cargo make ${{ matrix.task }} (${duration}s, exit code: $exit_code)"
+              echo "result=failure" >> $env:GITHUB_OUTPUT
+              exit $exit_code
             }
           } catch {
             $end_time = Get-Date
             $duration = ($end_time - $start_time).TotalSeconds
             echo "💥 ERROR: cargo make ${{ matrix.task }} (${duration}s, exception: $_)"
+            echo "result=error" >> $env:GITHUB_OUTPUT
+            exit 1
           }
           echo "::endgroup::"
 
@@ -729,18 +735,23 @@ jobs:
           name: windows-task-results-${{ matrix.task }}
           path: windows-task-results.txt
 
-      # Produce JSON test output and convert to JUnit
-      - name: Run tests to JSON (for report)
-        shell: bash
-        run: |
-          cargo test --workspace -- --format json --report-time -Z unstable-options | tee results.json
-        continue-on-error: true
+      # Install cargo2junit for cross-platform test reporting
+      - name: Install cargo2junit
+        run: cargo install cargo2junit
 
-      - name: Prepare JUnit report
-        id: cargo_reporter
-        uses: innoq/action-cargo-test-report@v1
-        with:
-          cargo-test-report-json: 'results.json'
+      # Run tests and generate cross-platform JUnit XML
+      - name: Run tests and generate JUnit report
+        id: test_run
+        run: |
+          $env:RUSTC_BOOTSTRAP=1
+          # Run tests with JSON output and convert to JUnit XML
+          cargo test --workspace -- -Z unstable-options --format json --report-time | Tee-Object results.json
+          if ($LASTEXITCODE -ne 0) {
+            echo "Tests failed, but continuing to generate report"
+          }
+          Get-Content results.json | cargo2junit | Out-File junit.xml -Encoding utf8
+          echo "junit-generated=true" >> $env:GITHUB_OUTPUT
+        continue-on-error: true
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -749,13 +760,12 @@ jobs:
           report_paths: "junit.xml"
           detailed_summary: true
           include_passed: true
-          summary: ${{ steps.cargo_reporter.outputs.summary }}
 
       - name: Upload reports and logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-ci-artifacts
+          name: windows-ci-artifacts-${{ matrix.task }}-${{ github.run_id }}
           path: |
             results.json
             junit.xml

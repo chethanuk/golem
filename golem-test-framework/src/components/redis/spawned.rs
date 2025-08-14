@@ -21,10 +21,11 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tracing::{info, Level};
 
+// Windows-specific testcontainers imports (grouped for clarity)
 #[cfg(target_os = "windows")]
-use testcontainers::{Container, Docker, Image};
+use testcontainers::{runners::SyncRunner, ImageExt, Container};
 #[cfg(target_os = "windows")]
-use testcontainers_modules::redis::Redis as RedisImage;
+use testcontainers_modules::redis::{Redis as RedisImage, REDIS_PORT};
 
 pub struct SpawnedRedis {
     port: u16,
@@ -32,6 +33,7 @@ pub struct SpawnedRedis {
     child: Arc<Mutex<Option<Child>>>,
     valid: AtomicBool,
     _logger: ChildProcessLogger,
+    // Windows-specific container field (grouped at end for clarity)
     #[cfg(target_os = "windows")]
     _container: Option<Container<RedisImage>>,
 }
@@ -51,52 +53,36 @@ impl SpawnedRedis {
 
         let host = "localhost".to_string();
         
+        // Check environment variable for local Redis preference on Windows
         #[cfg(target_os = "windows")]
-        let use_local_redis = std::env::var("GOLEM_USE_LOCAL_REDIS").unwrap_or_default() == "true";
+        let use_local_redis = std::env::var("GOLEM_USE_LOCAL_REDIS")
+            .unwrap_or_default() == "true";
         
         #[cfg(target_os = "windows")]
-        let (child, container) = if use_local_redis {
+        let (mut child, container) = if use_local_redis {
             info!("Using local Redis server on Windows (GOLEM_USE_LOCAL_REDIS=true)");
-            let child = Command::new("cmd")
-                .arg("/C")
-                .arg("redis-server")
-                .arg("--port")
-                .arg(port.to_string())
-                .arg("--save")
-                .arg("")
-                .arg("--appendonly")
-                .arg("no")
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .expect("Failed to spawn local redis server");
+            let child = Self::spawn_local_redis_process(port)
+                .expect("Failed to spawn local Redis server");
             (Some(child), None)
         } else {
             info!("Using Testcontainers Redis on Windows (default)");
-            let docker = Docker::default();
-            let redis_image = RedisImage::default();
-            let container = docker.run(redis_image);
-            let mapped_port = container.get_host_port_ipv4(6379);
+            let container = Self::start_redis_container()
+                .expect("Failed to start Redis container");
+            let mapped_port = container
+                .get_host_port_ipv4(REDIS_PORT)
+                .expect("Failed to get Redis container port");
             info!("Redis container started on port {}", mapped_port);
             (None, Some(container))
         };
         
         #[cfg(not(target_os = "windows"))]
-        let mut child = Command::new("redis-server")
-            .arg("--port")
-            .arg(port.to_string())
-            .arg("--save")
-            .arg("")
-            .arg("--appendonly")
-            .arg("no")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Failed to spawn redis server");
+        let mut child = Self::spawn_local_redis_process(port)
+            .expect("Failed to spawn Redis server");
 
+        // Determine final port (for containers, use mapped port)
         #[cfg(target_os = "windows")]
         let final_port = if let Some(ref container) = container {
-            container.get_host_port_ipv4(6379)
+            container.get_host_port_ipv4(REDIS_PORT).expect("Failed to get host port")
         } else {
             port
         };
@@ -104,11 +90,21 @@ impl SpawnedRedis {
         #[cfg(not(target_os = "windows"))]
         let final_port = port;
 
+        // Set up logging (handle both child process and container scenarios)
         #[cfg(target_os = "windows")]
         let logger = if let Some(ref mut child_proc) = child {
             ChildProcessLogger::log_child_process("[redis]", out_level, err_level, child_proc)
         } else {
-            ChildProcessLogger::default()
+            // For containers, create a minimal dummy process for logger compatibility
+            let mut dummy_child = Command::new("cmd")
+                .arg("/C")
+                .arg("echo")
+                .arg("Container started")
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .expect("Failed to create dummy process for container logging");
+            ChildProcessLogger::log_child_process("[redis-container]", out_level, err_level, &mut dummy_child)
         };
 
         #[cfg(not(target_os = "windows"))]
@@ -119,10 +115,7 @@ impl SpawnedRedis {
         Self {
             port: final_port,
             prefix,
-            #[cfg(target_os = "windows")]
             child: Arc::new(Mutex::new(child)),
-            #[cfg(not(target_os = "windows"))]
-            child: Arc::new(Mutex::new(Some(child))),
             valid: AtomicBool::new(true),
             _logger: logger,
             #[cfg(target_os = "windows")]
@@ -130,11 +123,58 @@ impl SpawnedRedis {
         }
     }
 
+    // Helper method to spawn local Redis process (cross-platform)
+    fn spawn_local_redis_process(port: u16) -> Result<Child, std::io::Error> {
+        #[cfg(target_os = "windows")]
+        let command = Command::new("cmd")
+            .arg("/C")
+            .arg("redis-server")
+            .arg("--port")
+            .arg(port.to_string())
+            .arg("--save")
+            .arg("")
+            .arg("--appendonly")
+            .arg("no")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn();
+            
+        #[cfg(not(target_os = "windows"))]
+        let command = Command::new("redis-server")
+            .arg("--port")
+            .arg(port.to_string())
+            .arg("--save")
+            .arg("")
+            .arg("--appendonly")
+            .arg("no")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn();
+            
+        command
+    }
+    
+    // Helper method to start Redis container (Windows-only)
+    #[cfg(target_os = "windows")]
+    fn start_redis_container() -> Result<Container<RedisImage>, testcontainers::core::error::TestcontainersError> {
+        RedisImage::default()
+            .with_tag("7.2")
+            .start()
+    }
+
     fn blocking_kill(&self) {
         info!("Stopping Redis");
+        
+        // Kill child process if present
         if let Some(mut child) = self.child.lock().unwrap().take() {
             self.valid.store(false, Ordering::Release);
             let _ = child.kill();
+        }
+        
+        // Stop container if present (Windows only)
+        #[cfg(target_os = "windows")]
+        if let Some(ref container) = self._container {
+            let _ = container.stop();
         }
     }
 }
