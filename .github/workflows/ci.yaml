@@ -582,6 +582,17 @@ jobs:
           save-if: false
           # Optionally: workspaces: true
 
+      - name: Install cargo-make
+        run: |
+          echo "Installing cargo-make..."
+          cargo install cargo-make --locked
+          echo "Verifying cargo-make installation..."
+          # Refresh environment variables and PATH
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          # Verify cargo-make is accessible
+          cargo make --version
+          echo "✅ cargo-make installed and verified successfully"
+
       - name: Build (workspace)
         env:
           RUSTFLAGS: -C codegen-units=8 -C debuginfo=1
@@ -589,16 +600,28 @@ jobs:
 
       # Use cargo-make for your existing flows
       - name: Unit tests
-        run: cargo make --profile ci unit-tests
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci unit-tests
 
       - name: Check formatting and clippy rules
-        run: cargo make --profile ci check
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci check
 
       - name: Check openapi is up to date
-        run: cargo make --profile ci check-openapi
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci check-openapi
 
       - name: Check configs are up to date
-        run: cargo make --profile ci check-configs
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci check-configs
 
   # Comprehensive Windows cargo make task testing matrix
   windows-cargo-make-matrix:
@@ -683,7 +706,15 @@ jobs:
           rustup target add wasm32-wasip1
 
       - name: Install cargo-make
-        run: cargo install cargo-make
+        run: |
+          echo "Installing cargo-make..."
+          cargo install cargo-make --locked
+          echo "Verifying cargo-make installation..."
+          # Refresh environment variables and PATH
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          # Verify cargo-make is accessible
+          cargo make --version
+          echo "✅ cargo-make installed and verified successfully"
 
       - name: Rust cache
         uses: useblacksmith/rust-cache@v3

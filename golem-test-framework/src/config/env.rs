@@ -216,7 +216,7 @@ impl EnvBasedTestDependencies {
                     prefix,
                     config.default_stdout_level(),
                     config.default_stderr_level(),
-                ))
+                ).await)
             }
         }
     }

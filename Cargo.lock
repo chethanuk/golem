@@ -4100,6 +4100,8 @@ dependencies = [
  "system-interface",
  "tempfile",
  "test-r",
+ "testcontainers",
+ "testcontainers-modules",
  "tokio",
  "tokio-stream",
  "tokio-util",

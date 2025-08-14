@@ -587,7 +587,7 @@ impl CliTestDependencies {
             redis_prefix.to_string(),
             out_level,
             Level::ERROR,
-        ));
+        ).await);
 
         let redis_monitor: Arc<dyn RedisMonitor> = Arc::new(SpawnedRedisMonitor::new(
             redis.clone(),

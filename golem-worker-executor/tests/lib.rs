@@ -140,7 +140,7 @@ impl WorkerExecutorTestDependencies {
             "".to_string(),
             Level::INFO,
             Level::ERROR,
-        ));
+        ).await);
         let redis_monitor: Arc<dyn RedisMonitor> = Arc::new(SpawnedRedisMonitor::new(
             redis.clone(),
             Level::TRACE,

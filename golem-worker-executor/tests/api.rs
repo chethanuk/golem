@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::common::{start, TestContext};
+#[allow(unused_imports)]
 use crate::compatibility::worker_recovery::save_recovery_golden_file;
 use crate::{LastUniqueId, Tracing, WorkerExecutorTestDependencies};
 use assert2::check;
