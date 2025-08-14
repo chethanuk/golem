@@ -140,7 +140,7 @@ async fn simulated_crash(
     check!(stdout_events(events.into_iter()) == vec!["Starting interruption test\n"]);
 }
 
-#[test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[tracing::instrument]
 #[timeout(120_000)]
 async fn shopping_cart_example(

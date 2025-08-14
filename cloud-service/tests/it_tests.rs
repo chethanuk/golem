@@ -74,9 +74,15 @@ async fn start_docker_postgres() -> (CloudServiceConfig, ContainerAsync<Postgres
         "MCowBQYDK2VwAyEAtKkMHoxrjJ52D/OEJ9Gww9hBl22m2YLU3qkWwTka02w=",
     );
     std::env::set_var("GOLEM__COMPONENTS__STORE__TYPE", "Local");
+    // Use OS temp directory for component store so tests work cross-platform
+    let mut root_path = std::env::temp_dir();
+    root_path.push("golem");
+    root_path.push("components");
+    // Ensure the directory exists
+    std::fs::create_dir_all(&root_path).unwrap();
     std::env::set_var(
         "GOLEM__COMPONENTS__STORE__CONFIG__ROOT_PATH",
-        "/tmp/golem/components",
+        root_path.to_string_lossy().to_string(),
     );
 
     let config = make_config_loader()
@@ -564,15 +570,18 @@ struct SqliteDb {
 
 impl Default for SqliteDb {
     fn default() -> Self {
+        let mut p = std::env::temp_dir();
+        p.push(format!("golem-{}.db", Uuid::new_v4()));
         Self {
-            db_path: format!("/tmp/golem-{}.db", Uuid::new_v4()),
+            db_path: p.to_string_lossy().to_string(),
         }
     }
 }
 
 impl Drop for SqliteDb {
     fn drop(&mut self) {
-        std::fs::remove_file(&self.db_path).unwrap();
+        // Best-effort cleanup
+        let _ = std::fs::remove_file(&self.db_path);
     }
 }
 
@@ -608,9 +617,13 @@ pub async fn test_sqlite_db() {
         "MCowBQYDK2VwAyEAtKkMHoxrjJ52D/OEJ9Gww9hBl22m2YLU3qkWwTka02w=",
     );
     std::env::set_var("GOLEM__COMPONENTS__STORE__TYPE", "Local");
+    let mut root_path = std::env::temp_dir();
+    root_path.push("golem");
+    root_path.push("components");
+    std::fs::create_dir_all(&root_path).unwrap();
     std::env::set_var(
         "GOLEM__COMPONENTS__STORE__CONFIG__ROOT_PATH",
-        "/tmp/golem/components",
+        root_path.to_string_lossy().to_string(),
     );
 
     let config = make_config_loader()
