@@ -211,12 +211,15 @@ impl EnvBasedTestDependencies {
             if components::redis::check_if_running(&host, port) {
                 Arc::new(ProvidedRedis::new(host, port, prefix))
             } else {
-                Arc::new(SpawnedRedis::new(
-                    port,
-                    prefix,
-                    config.default_stdout_level(),
-                    config.default_stderr_level(),
-                ).await)
+                Arc::new(
+                    SpawnedRedis::new(
+                        port,
+                        prefix,
+                        config.default_stdout_level(),
+                        config.default_stderr_level(),
+                    )
+                    .await,
+                )
             }
         }
     }
