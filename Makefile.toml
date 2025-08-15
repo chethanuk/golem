@@ -582,12 +582,13 @@ args = [
 [tasks.store-openapi]
 description = "Stores the generated openapi spec in the openapi directory"
 dependencies = ["merge-openapi"]
-script = [
-    "cp -v ./target/golem-service.yaml ./openapi/golem-service.yaml",
-    "cp -v ./target/cloud-spec.yaml ./openapi/",
-    "cp -v ./target/golem-component-service.yaml ./openapi/",
-    "cp -v ./target/golem-worker-service.yaml ./openapi/",
-]
+script_runner = "@duckscript"
+script = '''
+cp ./target/golem-service.yaml ./openapi/golem-service.yaml
+cp ./target/cloud-spec.yaml ./openapi/cloud-spec.yaml
+cp ./target/golem-component-service.yaml ./openapi/golem-component-service.yaml
+cp ./target/golem-worker-service.yaml ./openapi/golem-worker-service.yaml
+'''
 
 ## ** PUBLISH **
 [tasks.publish]
