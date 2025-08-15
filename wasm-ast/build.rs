@@ -28,8 +28,14 @@ fn main() -> Result<()> {
     println!("cargo:warning=Prepended to PATH: {}", protoc_dir.display());
     // Emit helpful build-time diagnostics so it is clear which `protoc`
     // binary is being used and whether it is actually present on disk.
-    println!("cargo:warning=Vendored protoc path: {}", protoc_path.display());
-    println!("cargo:warning=Vendored protoc exists: {}", protoc_path.exists());
+    println!(
+        "cargo:warning=Vendored protoc path: {}",
+        protoc_path.display()
+    );
+    println!(
+        "cargo:warning=Vendored protoc exists: {}",
+        protoc_path.exists()
+    );
     // Also print the value picked up by the build script for further diagnostics.
     println!(
         "cargo:warning=PROTOC env var: {:?}",

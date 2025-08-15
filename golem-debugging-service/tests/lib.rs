@@ -232,12 +232,8 @@ impl Debug for RegularWorkerExecutorTestDependencies {
 
 impl RegularWorkerExecutorTestDependencies {
     pub async fn new() -> Self {
-        let redis: Arc<dyn Redis> = Arc::new(SpawnedRedis::new(
-            6379,
-            "".to_string(),
-            Level::INFO,
-            Level::ERROR,
-        ).await);
+        let redis: Arc<dyn Redis> =
+            Arc::new(SpawnedRedis::new(6379, "".to_string(), Level::INFO, Level::ERROR).await);
         let redis_monitor: Arc<dyn RedisMonitor> = Arc::new(SpawnedRedisMonitor::new(
             redis.clone(),
             Level::DEBUG,

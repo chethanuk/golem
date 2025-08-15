@@ -635,7 +635,6 @@ jobs:
           - "dev-flow"
           # Build Tools
           - "build"
-          - "build-release"
           - "wit"
           - "check-wit"
           # Code Quality Tools
@@ -661,10 +660,6 @@ jobs:
           - "run-with-login-enabled"
           # Docker Tools (optional)
           - "elastic-up"
-          - "elastic-stop"
-          - "elastic-down"
-          # Publishing
-          - "publish"
     env:
       CARGO_BUILD_JOBS: 4
       CARGO_TERM_COLOR: always

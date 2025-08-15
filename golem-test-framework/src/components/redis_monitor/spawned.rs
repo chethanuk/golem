@@ -31,7 +31,21 @@ impl SpawnedRedisMonitor {
             redis.as_ref().public_port()
         );
 
-        let mut child = Command::new("redis-cli")
+        // Use appropriate CLI client based on platform
+        #[cfg(target_os = "windows")]
+        let cli_command = {
+            // First try memurai-cli directly, then fall back to our wrapper
+            if std::process::Command::new("memurai-cli").arg("--version").output().is_ok() {
+                "memurai-cli"
+            } else {
+                "redis-cli.bat"
+            }
+        };
+
+        #[cfg(not(target_os = "windows"))]
+        let cli_command = "redis-cli";
+
+        let mut child = Command::new(cli_command)
             .arg("-h")
             .arg(redis.as_ref().public_host())
             .arg("-p")

@@ -23,11 +23,11 @@ use tracing::{info, Level};
 
 // Windows-specific testcontainers imports (grouped for clarity)
 #[cfg(target_os = "windows")]
+use crate::components::docker::ContainerHandle;
+#[cfg(target_os = "windows")]
 use testcontainers::{runners::AsyncRunner, ImageExt};
 #[cfg(target_os = "windows")]
 use testcontainers_modules::redis::{Redis as RedisImage, REDIS_PORT};
-#[cfg(target_os = "windows")]
-use crate::components::docker::ContainerHandle;
 
 pub struct SpawnedRedis {
     port: u16,
@@ -47,39 +47,43 @@ impl SpawnedRedis {
             "".to_string(),
             Level::DEBUG,
             Level::ERROR,
-        ).await
+        )
+        .await
     }
 
     pub async fn new(port: u16, prefix: String, out_level: Level, err_level: Level) -> Self {
         info!("Starting Redis on port {}", port);
 
         let host = "localhost".to_string();
-        
-        // Check environment variable for local Redis preference on Windows
+
+        // Check environment variable for Docker Redis preference on Windows
         #[cfg(target_os = "windows")]
-        let use_local_redis = std::env::var("GOLEM_USE_LOCAL_REDIS")
-            .unwrap_or_default() == "true";
-        
+        let use_docker_redis =
+            std::env::var("ENABLE_WINDOWS_REDIS_DOCKER").unwrap_or_default() == "true";
+
         #[cfg(target_os = "windows")]
-        let (mut child, container, actual_port) = if use_local_redis {
-            info!("Using local Redis server on Windows (GOLEM_USE_LOCAL_REDIS=true)");
-            let child = Self::spawn_local_redis_process(port)
-                .expect("Failed to spawn local Redis server");
-            (Some(child), None, port)
-        } else {
-            info!("Using Testcontainers Redis on Windows (default)");
-            let container = Self::start_redis_container().await
+        let (mut child, container, actual_port) = if use_docker_redis {
+            info!("Using Testcontainers Redis on Windows (ENABLE_WINDOWS_REDIS_DOCKER=true)");
+            let container = Self::start_redis_container()
+                .await
                 .expect("Failed to start Redis container");
-            let mapped_port: u16 = container.get_host_port_ipv4(REDIS_PORT).await
+            let mapped_port: u16 = container
+                .get_host_port_ipv4(REDIS_PORT)
+                .await
                 .expect("Failed to get Redis container port");
             info!("Redis container started on port {}", mapped_port);
             (None, Some(ContainerHandle::new(container)), mapped_port)
+        } else {
+            info!("Using Memurai Redis server on Windows (default)");
+            let child = Self::spawn_local_redis_process(port)
+                .expect("Failed to spawn Memurai Redis server");
+            (Some(child), None, port)
         };
-        
+
         #[cfg(not(target_os = "windows"))]
         let (mut child, actual_port) = {
-            let child = Self::spawn_local_redis_process(port)
-                .expect("Failed to spawn Redis server");
+            let child =
+                Self::spawn_local_redis_process(port).expect("Failed to spawn Redis server");
             (Some(child), port)
         };
 
@@ -96,7 +100,12 @@ impl SpawnedRedis {
                 .stderr(Stdio::piped())
                 .spawn()
                 .expect("Failed to create dummy process for container logging");
-            ChildProcessLogger::log_child_process("[redis-container]", out_level, err_level, &mut dummy_child)
+            ChildProcessLogger::log_child_process(
+                "[redis-container]",
+                out_level,
+                err_level,
+                &mut dummy_child,
+            )
         };
 
         super::wait_for_startup(&host, actual_port, Duration::from_secs(10));
@@ -115,19 +124,25 @@ impl SpawnedRedis {
     // Helper method to spawn local Redis process (cross-platform)
     fn spawn_local_redis_process(port: u16) -> Result<Child, std::io::Error> {
         #[cfg(target_os = "windows")]
-        let command = Command::new("cmd")
-            .arg("/C")
-            .arg("redis-server")
-            .arg("--port")
-            .arg(port.to_string())
-            .arg("--save")
-            .arg("")
-            .arg("--appendonly")
-            .arg("no")
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn();
-            
+        let command = {
+            // Use system temp directory for Redis data to avoid path issues
+            let temp_dir = std::env::temp_dir().join("golem-redis-data");
+            std::fs::create_dir_all(&temp_dir).ok(); // Create if doesn't exist, ignore errors
+
+            Command::new("memurai")
+                .arg("--port")
+                .arg(port.to_string())
+                .arg("--appendonly")
+                .arg("yes")
+                .arg("--dir")
+                .arg(temp_dir.to_string_lossy().to_string())
+                .arg("--save")
+                .arg("")
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+        };
+
         #[cfg(not(target_os = "windows"))]
         let command = Command::new("redis-server")
             .arg("--port")
@@ -139,27 +154,28 @@ impl SpawnedRedis {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn();
-            
+
         command
     }
-    
+
     // Helper method to start Redis container (Windows-only)
     #[cfg(target_os = "windows")]
-    async fn start_redis_container() -> Result<testcontainers::ContainerAsync<RedisImage>, testcontainers::core::error::TestcontainersError> {
-        RedisImage::default()
-            .with_tag("7.2")
-            .start().await
+    async fn start_redis_container() -> Result<
+        testcontainers::ContainerAsync<RedisImage>,
+        testcontainers::core::error::TestcontainersError,
+    > {
+        RedisImage::default().with_tag("7.2").start().await
     }
 
     fn blocking_kill(&self) {
         info!("Stopping Redis");
-        
+
         // Kill child process if present
         if let Some(mut child) = self.child.lock().unwrap().take() {
             self.valid.store(false, Ordering::Release);
             let _ = child.kill();
         }
-        
+
         // Stop container if present (Windows only) - ContainerHandle manages this automatically
     }
 }

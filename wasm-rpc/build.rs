@@ -32,8 +32,14 @@ fn main() -> Result<()> {
 
     // Build-time diagnostics.
     println!("cargo:warning=Prepended to PATH: {}", protoc_dir.display());
-    println!("cargo:warning=Vendored protoc path: {}", protoc_path.display());
-    println!("cargo:warning=Vendored protoc exists: {}", protoc_path.exists());
+    println!(
+        "cargo:warning=Vendored protoc path: {}",
+        protoc_path.display()
+    );
+    println!(
+        "cargo:warning=Vendored protoc exists: {}",
+        protoc_path.exists()
+    );
     println!(
         "cargo:warning=PROTOC env var: {:?}",
         std::env::var_os("PROTOC")
