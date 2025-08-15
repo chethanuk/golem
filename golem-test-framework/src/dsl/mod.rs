@@ -50,14 +50,15 @@ use golem_common::model::plugin::PluginWasmFileKey;
 use golem_common::model::public_oplog::PublicOplogEntry;
 use golem_common::model::regions::DeletedRegions;
 use golem_common::model::{
-    AccountId, ComponentFilePath, ComponentFilePermissions, PluginInstallationId, ProjectId,
-    WorkerStatus,
+    AccountId, AgentInstanceDescription, AgentInstanceKey, ComponentFilePermissions,
+    ExportedResourceInstanceDescription, ExportedResourceInstanceKey, PluginInstallationId,
+    ProjectId, WorkerResourceDescription, WorkerResourceKey, WorkerStatus,
 };
 use golem_common::model::{
     ComponentFileSystemNode, ComponentId, ComponentType, ComponentVersion, FailedUpdateRecord,
     IdempotencyKey, InitialComponentFile, InitialComponentFileKey, ScanCursor,
     SuccessfulUpdateRecord, TargetWorkerId, WorkerFilter, WorkerId, WorkerMetadata,
-    WorkerResourceDescription, WorkerStatusRecord,
+    WorkerStatusRecord,
 };
 use golem_common::widen_infallible;
 use golem_service_base::model::{ComponentName, PublicOplogEntryWithIndex, RevertWorkerTarget};
@@ -66,7 +67,6 @@ use golem_wasm_rpc::{Value, ValueAndType};
 use std::borrow::Borrow;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tempfile::Builder;
 use tokio::select;
@@ -265,7 +265,7 @@ pub trait TestDsl {
                 source.into(),
                 InitialComponentFile {
                     key: self.add_initial_component_file(Path::new(source)).await,
-                    path: ComponentFilePath::from_str(target).unwrap(),
+                    path: (*target).try_into().unwrap(),
                     permissions: *permissions,
                 },
             ))
@@ -2141,18 +2141,39 @@ pub fn to_worker_metadata(
                 owned_resources: metadata
                     .owned_resources
                     .iter()
-                    .map(|(k, v)| {
-                        (
-                            WorkerResourceId(*k),
-                            WorkerResourceDescription {
-                                created_at: (*v
-                                    .created_at
-                                    .as_ref()
-                                    .expect("no timestamp on resource metadata"))
-                                .into(),
-                                indexed_resource_key: v.indexed.clone().map(|i| i.into()),
-                            },
-                        )
+                    .map(|description| {
+                        match &description.description {
+                            Some(golem_api_grpc::proto::golem::worker::resource_description::Description::ExportedResourceInstance(desc)) => {
+                                (
+                                    WorkerResourceKey::ExportedResourceInstanceKey(ExportedResourceInstanceKey { resource_id: WorkerResourceId(desc.resource_id) }),
+                                    WorkerResourceDescription::ExportedResourceInstance(ExportedResourceInstanceDescription {
+                                        created_at: desc.created_at.expect("Missing created_at").into(),
+                                        resource_name: desc.resource_name.clone(),
+                                        resource_owner: desc.resource_owner.clone(),
+                                        resource_params: if desc.is_indexed {
+                                            Some(desc.resource_params.clone())
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                )
+                            }
+                            Some(golem_api_grpc::proto::golem::worker::resource_description::Description::AgentInstance(desc)) => {
+                                (
+                                    WorkerResourceKey::AgentInstanceKey(AgentInstanceKey {
+                                        agent_type: desc.agent_type.clone(),
+                                        agent_id: desc.agent_id.clone()
+                                    }),
+                                    WorkerResourceDescription::AgentInstance(AgentInstanceDescription {
+                                        created_at: desc.created_at.expect("Missing created_at").into(),
+                                        agent_parameters: desc.clone().agent_parameters.expect("Missing agent_parameters").try_into().expect("invalid agent_parameters"),
+                                    })
+                                )
+                            }
+                            None => {
+                                panic!("Invalid resource description: {description:?}");
+                            }
+                        }
                     })
                     .collect(),
                 active_plugins: HashSet::from_iter(
