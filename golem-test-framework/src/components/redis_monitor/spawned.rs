@@ -35,7 +35,11 @@ impl SpawnedRedisMonitor {
         #[cfg(target_os = "windows")]
         let cli_command = {
             // First try memurai-cli directly, then fall back to our wrapper
-            if std::process::Command::new("memurai-cli").arg("--version").output().is_ok() {
+            if std::process::Command::new("memurai-cli")
+                .arg("--version")
+                .output()
+                .is_ok()
+            {
                 "memurai-cli"
             } else {
                 "redis-cli.bat"

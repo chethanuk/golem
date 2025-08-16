@@ -455,41 +455,63 @@ dependencies = [
 [tasks.diff-openapi]
 description = "Checks if the generated openapi spec is the same as the one in the openapi directory"
 dependencies = ["merge-openapi"]
+script_runner = "@duckscript"
 script = '''
-  if diff openapi/golem-service.yaml target/golem-service.yaml  >/dev/null 2>&1
-    then
-      echo "Latest Golem OpenAPI spec version detected."
-    else
-      echo "openapi/golem-service.yaml is not the same as produced by golem-service-yaml." 1>&2
-      echo "Run cargo make generate-openapi to generate new spec." 1>&2
-      echo ""
-      diff openapi/golem-service.yaml target/golem-service.yaml
-      exit 1
-  fi
-  if diff openapi/cloud-spec.yaml target/cloud-spec.yaml  >/dev/null 2>&1
-    then
-      echo "Latest Golem OpenAPI spec version detected."
-    else
-      echo "openapi/cloud-spec.yaml is not the same as produced by cloud-service." 1>&2
-      echo "Run cargo make generate-openapi to generate new spec." 1>&2
-      exit 1
-  fi
-  if diff openapi/golem-component-service.yaml target/golem-component-service.yaml  >/dev/null 2>&1
-    then
-      echo "Latest Golem OpenAPI spec version detected."
-    else
-      echo "openapi/golem-component-service.yaml is not the same as produced by golem-component-service." 1>&2
-      echo "Run cargo make generate-openapi to generate new spec." 1>&2
-      exit 1
-  fi
-  if diff openapi/golem-worker-service.yaml target/golem-worker-service.yaml  >/dev/null 2>&1
-    then
-      echo "Latest Golem OpenAPI spec version detected."
-    else
-      echo "openapi/golem-worker-service.yaml is not the same as produced by golem-worker-service." 1>&2
-      echo "Run cargo make generate-openapi to generate new spec." 1>&2
-      exit 1
-  fi
+  # Compare golem-service.yaml
+  file1_content = readfile openapi/golem-service.yaml
+  file2_content = readfile target/golem-service.yaml
+  files_equal = equals ${file1_content} ${file2_content}
+  
+  if ${files_equal}
+    echo "Latest Golem OpenAPI spec version detected."
+  else
+    echo "openapi/golem-service.yaml is not the same as produced by golem-service-yaml."
+    echo "Run cargo make generate-openapi to generate new spec."
+    echo ""
+    echo "Files differ:"
+    echo "- openapi/golem-service.yaml"
+    echo "- target/golem-service.yaml"
+    exit 1
+  end
+  
+  # Compare cloud-spec.yaml
+  file1_content = readfile openapi/cloud-spec.yaml
+  file2_content = readfile target/cloud-spec.yaml
+  files_equal = equals ${file1_content} ${file2_content}
+  
+  if ${files_equal}
+    echo "Latest Golem OpenAPI spec version detected."
+  else
+    echo "openapi/cloud-spec.yaml is not the same as produced by cloud-service."
+    echo "Run cargo make generate-openapi to generate new spec."
+    exit 1
+  end
+  
+  # Compare golem-component-service.yaml
+  file1_content = readfile openapi/golem-component-service.yaml
+  file2_content = readfile target/golem-component-service.yaml
+  files_equal = equals ${file1_content} ${file2_content}
+  
+  if ${files_equal}
+    echo "Latest Golem OpenAPI spec version detected."
+  else
+    echo "openapi/golem-component-service.yaml is not the same as produced by golem-component-service."
+    echo "Run cargo make generate-openapi to generate new spec."
+    exit 1
+  end
+  
+  # Compare golem-worker-service.yaml
+  file1_content = readfile openapi/golem-worker-service.yaml
+  file2_content = readfile target/golem-worker-service.yaml
+  files_equal = equals ${file1_content} ${file2_content}
+  
+  if ${files_equal}
+    echo "Latest Golem OpenAPI spec version detected."
+  else
+    echo "openapi/golem-worker-service.yaml is not the same as produced by golem-worker-service."
+    echo "Run cargo make generate-openapi to generate new spec."
+    exit 1
+  end
 '''
 
 ## ** GENERATE-OPENAPI **
@@ -779,35 +801,33 @@ dependencies = ["build-release-override-linux-arm64"]
 description = "Runs all the services locally"
 dependencies = ["build"]
 
-condition = { fail_message = "Requires lnav, nginx and redis on path. Install them with your package manager" }
+condition = { fail_message = "Requires redis on path. Install with 'choco install redis' or use the installed PowerShell script." }
 
 condition_script = [
-    "nginx -v",
-    "lnav --version",
     "redis-server --version",
     ""
 ]
 
 env = { "GOLEM_CLOUD_SERVICE_LOGIN_TYPE" = "Disabled" }
 
-script = { file = "./local-run/start.sh" }
+script_runner = "@shell"
+script = "powershell.exe -ExecutionPolicy Bypass -File ./local-run/start.ps1"
 
 [tasks.run-with-login-enabled]
 description = "Runs all the services locally with the oauth2 login system enabled"
 dependencies = ["build"]
 
-condition = { env_set = ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"], fail_message = "Requires lnav, nginx and redis on path. Install them with your package manager. GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET env vars must be set." }
+condition = { env_set = ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"], fail_message = "Requires redis on path. Install with 'choco install redis'. GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET env vars must be set." }
 
 condition_script = [
-    "nginx -v",
-    "lnav --version",
     "redis-server --version",
     ""
 ]
 
 env = { "GOLEM_CLOUD_SERVICE_LOGIN_TYPE" = "OAuth2" }
 
-script = { file = "./local-run/start.sh" }
+script_runner = "@shell"
+script = "powershell.exe -ExecutionPolicy Bypass -File ./local-run/start.ps1"
 
 ## ** GENERATE CONFIGS **
 

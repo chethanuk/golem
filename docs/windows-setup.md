@@ -71,6 +71,25 @@ cargo test  --workspace --lib -j 2 -- --nocapture
 
 If you run into linker errors for SQLite on Windows, ensure the VS Build Tools step completed successfully; the project uses SQLx with SQLite support and compiles C code as needed via MSVC.
 
+
+## Install Nginx, Redis, Memurai
+
+Ensure you have Chocolatey installed:
+
+```powershell
+choco install nginx redis memurai-developer -y
+```
+
+Verify Redis is working 
+```powershell
+$  Get-Process | Where-Object {$_.ProcessName -match "golem|redis|memurai"} | Select-Object Id, ProcessName, CPU
+
+  Id ProcessName      CPU
+  -- -----------      ---
+4684 memurai     0.359375
+7228 memurai      0.40625
+```
+
 ## 5) Optional: Docker Desktop and act
 
 Some integration tests use Docker and Redis. Docker is optional for regular dev.
@@ -106,3 +125,62 @@ Notes
     ```powershell
     set RUSTFLAGS=-Ccodegen-units=8
     ```
+   
+
+  • After running `cargo make run`, you can check the status of the services with:   
+
+    ```powershell
+    Get-Process -Id 6472,5856,7324,7932,4172,904,8944,3060 -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, CPU, StartTime
+    ```
+
+  • After running `cargo make run`, you can check the ports of the services with:   
+
+    ```powershell
+    netstat -an | findstr "8080\|8085"
+    ```
+
+  • After running `cargo make run`, you can check the help of the services with:   
+
+    ```powershell
+    PS C:\Users\Administrator\golem> cd .\cloud-service\ 
+    PS C:\Users\Administrator\golem\cloud-service> $env:RUST_LOG="info"; $env:GOLEM__HTTP_PORT="8080"; $env:GOLEM__GRPC_PORT="9090"; $env:GOLEM__LOGIN__TYPE="Disabled"; $env:GOLEM__DB__TYPE="Sqlite"; $env:GOLEM__DB__CONFIG__DATABASE="../local-run/data/golem_cloud_service.db"; $env:GOLEM__ACCOUNTS__ROOT__TOKEN="5c832d93-ff85-4a8f-9803-513950fdfdb1"; ..\target\debug\cloud-service.exe --help
+    ```
+
+    if SqLlite is corrupted, remove using 
+
+    ```powershell
+    Remove-Item -Path ".\local-run\data\*.db*" -Force -ErrorAction SilentlyContinue; Remove-Item -Path ".\local-run\data\*.sqlite*" -Force -ErrorAction SilentlyContinue
+    ```
+
+
+  ## Golem CLI
+
+  
+  Invoke-WebRequest -Uri "https://github.com/golemcloud/golem-cli/releases/download/v1.3.0-dev.3/golem-x86_64-pc-windows-gnu.exe" -OutFile "golem.exe"
+
+  .\golem.exe --version
+golem 1.3.0-dev.3
+
+.\golem.exe profile new --component-url http://localhost:8080/ --set-active cloud-local
+
+.\golem.exe component list
+
+# Misc
+
+Add Windows Defender Exclusions (Recommended)
+
+
+start ms-settings:windowsdefender
+
+Windows Defender Exclusion Fix:
+Manual Steps:
+
+Windows Security should now be open
+Click "Virus & threat protection"
+Click "Manage settings" under Virus & threat protection settings
+Scroll down to "Exclusions"
+Click "Add or remove exclusions"
+Add these 3 folders:
+C:\Users\Administrator\golem (your project folder)
+C:\Users\Administrator\.cargo (Cargo cache)
+C:\Users\Administrator\.rustup (Rustup toolchain)
