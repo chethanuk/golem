@@ -626,6 +626,7 @@ jobs:
   # Comprehensive Windows cargo make task testing matrix
   windows-cargo-make-matrix:
     runs-on: windows-2022
+    if: github.event_name == 'push'
     continue-on-error: true  # Don't fail the workflow on individual task failures
     strategy:
       fail-fast: false  # Test all tasks even if some fail
