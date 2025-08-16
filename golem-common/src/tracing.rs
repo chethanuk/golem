@@ -398,7 +398,7 @@ where
 
     std::panic::set_hook({
         Box::new(|panic_info| {
-            error!(panic_info = %panic_info, panic_backtrace=%Backtrace::force_capture() , "panic");
+            error!(panic_info = %panic_info, panic_backtrace=%Backtrace::capture() , "panic");
         })
     });
 

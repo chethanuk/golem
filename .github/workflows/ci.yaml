@@ -582,6 +582,17 @@ jobs:
           save-if: false
           # Optionally: workspaces: true
 
+      - name: Install cargo-make
+        run: |
+          echo "Installing cargo-make..."
+          cargo install cargo-make --locked
+          echo "Verifying cargo-make installation..."
+          # Refresh environment variables and PATH
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          # Verify cargo-make is accessible
+          cargo make --version
+          echo "✅ cargo-make installed and verified successfully"
+
       - name: Build (workspace)
         env:
           RUSTFLAGS: -C codegen-units=8 -C debuginfo=1
@@ -589,29 +600,184 @@ jobs:
 
       # Use cargo-make for your existing flows
       - name: Unit tests
-        run: cargo make --profile ci unit-tests
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci unit-tests
 
       - name: Check formatting and clippy rules
-        run: cargo make --profile ci check
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci check
 
       - name: Check openapi is up to date
-        run: cargo make --profile ci check-openapi
+        run: |
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci check-openapi
 
       - name: Check configs are up to date
-        run: cargo make --profile ci check-configs
-
-      # Produce JSON test output and convert to JUnit
-      - name: Run tests to JSON (for report)
-        shell: bash
         run: |
-          cargo test --workspace -- --format json --report-time -Z unstable-options | tee results.json
-        continue-on-error: true
+          # Ensure PATH is refreshed before running cargo make
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          cargo make --profile ci check-configs
 
-      - name: Prepare JUnit report
-        id: cargo_reporter
-        uses: innoq/action-cargo-test-report@v1
+  # Comprehensive Windows cargo make task testing matrix
+  windows-cargo-make-matrix:
+    runs-on: windows-2022
+    continue-on-error: true  # Don't fail the workflow on individual task failures
+    strategy:
+      fail-fast: false  # Test all tasks even if some fail
+      matrix:
+        task:
+          # Core Development Workflow
+          - "dev-flow"
+          # Build Tools
+          - "build"
+          - "wit"
+          - "check-wit"
+          # Code Quality Tools
+          - "check"
+          - "fix"
+          # Testing Tools
+          - "unit-tests"
+          - "test"
+          - "worker-executor-tests"
+          - "integration-tests"
+          - "sharding-tests-debug"
+          # API Testing Tools
+          - "api-tests-http"
+          - "api-tests-grpc"
+          # Configuration Tools
+          - "generate-configs"
+          - "check-configs"
+          # OpenAPI Tools
+          - "generate-openapi"
+          - "check-openapi"
+          # Service Tools
+          - "run"
+          - "run-with-login-enabled"
+          # Docker Tools (optional)
+          - "elastic-up"
+    env:
+      CARGO_BUILD_JOBS: 4
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: 1
+      GOLEM_USE_LOCAL_REDIS: "false"  # Use Testcontainers Redis by default
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          cargo-test-report-json: 'results.json'
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Install winget (required for Windows dependency installation)
+        uses: Cyberboss/install-winget@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Windows dependencies via winget
+        run: |
+          # Verify winget is available
+          winget --version
+          
+          # Install Visual Studio Build Tools (C++ toolchain)
+          winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" --accept-source-agreements --accept-package-agreements --disable-interactivity
+          
+          # Install CMake
+          winget install --id Kitware.CMake -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+          
+          # Install Podman for Testcontainers Redis
+          winget install --id RedHat.Podman -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+          
+          # Install Docker Desktop (optional, for docker-based tasks)
+          winget install --id Docker.DockerDesktop -e --accept-source-agreements --accept-package-agreements --disable-interactivity || echo "Docker install failed, continuing..."
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile default --no-self-update
+          rustup default stable
+          rustup target add wasm32-wasip1
+
+      - name: Install cargo-make
+        run: |
+          echo "Installing cargo-make..."
+          cargo install cargo-make --locked
+          echo "Verifying cargo-make installation..."
+          # Refresh environment variables and PATH
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          # Verify cargo-make is accessible
+          cargo make --version
+          echo "✅ cargo-make installed and verified successfully"
+
+      - name: Rust cache
+        uses: useblacksmith/rust-cache@v3
+        with:
+          prefix-key: v3-rust
+          shared-key: windows-matrix
+          cache-all-crates: true
+          save-if: false
+
+      - name: Test cargo make task - ${{ matrix.task }}
+        id: cargo_task
+        run: |
+          echo "::group::Testing cargo make ${{ matrix.task }}"
+          $start_time = Get-Date
+          $exit_code = 0
+          try {
+            cargo make ${{ matrix.task }}
+            $exit_code = $LASTEXITCODE
+            $end_time = Get-Date
+            $duration = ($end_time - $start_time).TotalSeconds
+            if ($exit_code -eq 0) {
+              echo "✅ SUCCESS: cargo make ${{ matrix.task }} (${duration}s)"
+              echo "result=success" >> $env:GITHUB_OUTPUT
+            } else {
+              echo "❌ FAILED: cargo make ${{ matrix.task }} (${duration}s, exit code: $exit_code)"
+              echo "result=failure" >> $env:GITHUB_OUTPUT
+              exit $exit_code
+            }
+          } catch {
+            $end_time = Get-Date
+            $duration = ($end_time - $start_time).TotalSeconds
+            echo "💥 ERROR: cargo make ${{ matrix.task }} (${duration}s, exception: $_)"
+            echo "result=error" >> $env:GITHUB_OUTPUT
+            exit 1
+          }
+          echo "::endgroup::"
+
+      - name: Collect test results
+        if: always()
+        run: |
+          echo "Task: ${{ matrix.task }}" >> windows-task-results.txt
+          echo "Exit Code: $LASTEXITCODE" >> windows-task-results.txt
+          echo "---" >> windows-task-results.txt
+
+      - name: Upload task results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-task-results-${{ matrix.task }}
+          path: windows-task-results.txt
+
+      # Install cargo2junit for cross-platform test reporting
+      - name: Install cargo2junit
+        run: cargo install cargo2junit
+
+      # Run tests and generate cross-platform JUnit XML
+      - name: Run tests and generate JUnit report
+        id: test_run
+        run: |
+          $env:RUSTC_BOOTSTRAP=1
+          # Run tests with JSON output and convert to JUnit XML
+          cargo test --workspace -- -Z unstable-options --format json --report-time | Tee-Object results.json
+          if ($LASTEXITCODE -ne 0) {
+            echo "Tests failed, but continuing to generate report"
+          }
+          Get-Content results.json | cargo2junit | Out-File junit.xml -Encoding utf8
+          echo "junit-generated=true" >> $env:GITHUB_OUTPUT
+        continue-on-error: true
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -620,13 +786,12 @@ jobs:
           report_paths: "junit.xml"
           detailed_summary: true
           include_passed: true
-          summary: ${{ steps.cargo_reporter.outputs.summary }}
 
       - name: Upload reports and logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-ci-artifacts
+          name: windows-ci-artifacts-${{ matrix.task }}-${{ github.run_id }}
           path: |
             results.json
             junit.xml

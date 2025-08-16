@@ -1,5 +1,6 @@
 services:
   es01:
+    platform: linux/amd64
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     volumes:
       - esdata01:/usr/share/elasticsearch/data
@@ -22,6 +23,7 @@ services:
         hard: -1
 
   kibana:
+    platform: linux/amd64
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
     volumes:
       - kibanadata:/usr/share/kibana/data
@@ -38,6 +40,7 @@ services:
       test: [ CMD, "/bin/bash", "/provision/provision.sh" ]
 
   filebeat:
+    platform: linux/amd64
     image: docker.elastic.co/beats/filebeat:8.14.3
     command: [ "filebeat", "-e", "--strict.perms=false" ]
     volumes:

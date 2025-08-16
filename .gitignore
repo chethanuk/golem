@@ -29,3 +29,11 @@ data
 .vscode/
 .cursorrules
 .cursorignore
+plan.md
+unit_test_results.log
+golem_service.db-shm
+golem_service.db-wal
+golem_service.db
+logs.md
+test-components/query.json
+golem.exe

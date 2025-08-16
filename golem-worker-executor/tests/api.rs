@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::common::{start, TestContext};
+#[allow(unused_imports)]
 use crate::compatibility::worker_recovery::save_recovery_golden_file;
 use crate::{LastUniqueId, Tracing, WorkerExecutorTestDependencies};
 use assert2::check;
@@ -140,7 +141,7 @@ async fn simulated_crash(
     check!(stdout_events(events.into_iter()) == vec!["Starting interruption test\n"]);
 }
 
-#[test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[tracing::instrument]
 #[timeout(120_000)]
 async fn shopping_cart_example(
