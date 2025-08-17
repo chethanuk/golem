@@ -6,7 +6,7 @@ on:
     branches:
       - main
       - support-windows-tests-ci
-  pull_request:
+  # pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
