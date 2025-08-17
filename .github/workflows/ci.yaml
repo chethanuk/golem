@@ -695,6 +695,34 @@ jobs:
           # Install Docker Desktop (optional, for docker-based tasks)
           winget install --id Docker.DockerDesktop -e --accept-source-agreements --accept-package-agreements --disable-interactivity || echo "Docker install failed, continuing..."
 
+      - name: Install Redis and Memurai via Chocolatey
+        uses: amitie10g/install-package@v1
+        with:
+          choco: redis memurai-developer
+
+      - name: Verify Redis/Memurai installations
+        run: |
+          Write-Host "Verifying Redis/Memurai installations..."
+          
+          # Refresh environment variables to make redis/memurai available in PATH
+          $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+          
+          try {
+            memurai --version
+            Write-Host "✅ Memurai installed successfully"
+          } catch {
+            Write-Host "⚠️  Memurai version check failed: $_"
+            Write-Host "PATH: $env:Path"
+          }
+          
+          try {
+            redis-server --version
+            Write-Host "✅ Redis installed successfully" 
+          } catch {
+            Write-Host "⚠️  Redis version check failed: $_"
+            Write-Host "PATH: $env:Path"
+          }
+
       - name: Setup Rust
         run: |
           rustup toolchain install stable --profile default --no-self-update
@@ -716,9 +744,9 @@ jobs:
         uses: useblacksmith/rust-cache@v3
         with:
           prefix-key: v3-rust
-          shared-key: windows-matrix
+          shared-key: windows-matrix-${{ github.sha }}
           cache-all-crates: true
-          save-if: false
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Test cargo make task - ${{ matrix.task }}
         id: cargo_task
