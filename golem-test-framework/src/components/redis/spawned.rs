@@ -56,28 +56,30 @@ impl SpawnedRedis {
 
         let host = "localhost".to_string();
 
-        // Check environment variable for Docker Redis preference on Windows
+        // On Windows: prefer local redis-server; if not available, fall back to Testcontainers
         #[cfg(target_os = "windows")]
-        let use_docker_redis =
-            std::env::var("ENABLE_WINDOWS_REDIS_DOCKER").unwrap_or_default() == "true";
-
-        #[cfg(target_os = "windows")]
-        let (mut child, container, actual_port) = if use_docker_redis {
-            info!("Using Testcontainers Redis on Windows (ENABLE_WINDOWS_REDIS_DOCKER=true)");
-            let container = Self::start_redis_container()
-                .await
-                .expect("Failed to start Redis container");
-            let mapped_port: u16 = container
-                .get_host_port_ipv4(REDIS_PORT)
-                .await
-                .expect("Failed to get Redis container port");
-            info!("Redis container started on port {}", mapped_port);
-            (None, Some(ContainerHandle::new(container)), mapped_port)
-        } else {
-            info!("Using Memurai Redis server on Windows (default)");
-            let child = Self::spawn_local_redis_process(port)
-                .expect("Failed to spawn Memurai Redis server");
-            (Some(child), None, port)
+        let (mut child, container, actual_port) = {
+            match Self::spawn_local_redis_process(port) {
+                Ok(child) => {
+                    info!("Using local redis-server on Windows");
+                    (Some(child), None, port)
+                }
+                Err(e) => {
+                    info!(
+                        "Local redis-server unavailable ({}), falling back to Testcontainers Redis",
+                        e
+                    );
+                    let container = Self::start_redis_container()
+                        .await
+                        .expect("Failed to start Redis container (local redis-server not available; ensure a container runtime like Docker/Podman is installed and running for Testcontainers)");
+                    let mapped_port: u16 = container
+                        .get_host_port_ipv4(REDIS_PORT)
+                        .await
+                        .expect("Failed to get Redis container port");
+                    info!("Redis container started on port {}", mapped_port);
+                    (None, Some(ContainerHandle::new(container)), mapped_port)
+                }
+            }
         };
 
         #[cfg(not(target_os = "windows"))]
@@ -123,27 +125,6 @@ impl SpawnedRedis {
 
     // Helper method to spawn local Redis process (cross-platform)
     fn spawn_local_redis_process(port: u16) -> Result<Child, std::io::Error> {
-        #[cfg(target_os = "windows")]
-        let command = {
-            // Use system temp directory for Redis data to avoid path issues
-            let temp_dir = std::env::temp_dir().join("golem-redis-data");
-            std::fs::create_dir_all(&temp_dir).ok(); // Create if doesn't exist, ignore errors
-
-            Command::new("memurai")
-                .arg("--port")
-                .arg(port.to_string())
-                .arg("--appendonly")
-                .arg("yes")
-                .arg("--dir")
-                .arg(temp_dir.to_string_lossy().to_string())
-                .arg("--save")
-                .arg("")
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-        };
-
-        #[cfg(not(target_os = "windows"))]
         let command = Command::new("redis-server")
             .arg("--port")
             .arg(port.to_string())

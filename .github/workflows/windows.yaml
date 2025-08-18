@@ -63,7 +63,7 @@ jobs:
       CARGO_BUILD_JOBS: 4
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: 1
-      GOLEM_USE_LOCAL_REDIS: "false"  # Use Testcontainers Redis by default
+      GOLEM_USE_LOCAL_REDIS: "true"  # Prefer local redis-server; framework falls back to Testcontainers on Windows if missing
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,39 +86,44 @@ jobs:
           
           # Install CMake
           winget install --id Kitware.CMake -e --accept-source-agreements --accept-package-agreements --disable-interactivity
-          
-          # Install Podman for Testcontainers Redis
-          winget install --id RedHat.Podman -e --accept-source-agreements --accept-package-agreements --disable-interactivity
-          
-          # Install Docker Desktop (optional, for docker-based tasks)
-          winget install --id Docker.DockerDesktop -e --accept-source-agreements --accept-package-agreements --disable-interactivity || echo "Docker install failed, continuing..."
 
-      - name: Install Redis and Memurai via Chocolatey
+          # Install NASM (required by aws-lc-sys on Windows)
+          winget install --id NASM.NASM -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+
+          # Install LLVM/Clang and set LIBCLANG_PATH
+          winget install --id LLVM.LLVM -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+
+          # Install Podman for Testcontainers fallback (no Docker Desktop)
+          winget install --id RedHat.Podman -e --accept-source-agreements --accept-package-agreements --disable-interactivity || echo "Podman install failed, continuing..."
+
+      - name: Set LIBCLANG_PATH for Clang
+        shell: pwsh
+        run: |
+          $llvmBin = "C:\\Program Files\\LLVM\\bin"
+          if (Test-Path $llvmBin) {
+            echo "LIBCLANG_PATH=$llvmBin" >> $Env:GITHUB_ENV
+            Write-Host "LIBCLANG_PATH set to $llvmBin"
+          } else {
+            Write-Host "LLVM bin not found at $llvmBin; Clang may already be available via PATH"
+          }
+
+      - name: Install Redis via Chocolatey
         uses: amitie10g/install-package@v1
         with:
-          choco: redis memurai-developer
+          choco: redis
 
-      - name: Verify Redis/Memurai installations
+      - name: Verify Redis installation
         run: |
-          Write-Host "Verifying Redis/Memurai installations..."
-          
-          # Refresh environment variables to make redis/memurai available in PATH
+          Write-Host "Verifying Redis installation..."
+          # Refresh environment variables to make redis-server available in PATH
           $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
-          
-          try {
-            memurai --version
-            Write-Host "✅ Memurai installed successfully"
-          } catch {
-            Write-Host "⚠️  Memurai version check failed: $_"
-            Write-Host "PATH: $env:Path"
-          }
-          
           try {
             redis-server --version
-            Write-Host "✅ Redis installed successfully" 
+            Write-Host "✅ redis-server installed successfully"
           } catch {
-            Write-Host "⚠️  Redis version check failed: $_"
+            Write-Host "❌ redis-server not found in PATH"
             Write-Host "PATH: $env:Path"
+            exit 1
           }
 
       - name: Setup mise and install tools
