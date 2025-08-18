@@ -1,0 +1,173 @@
+# Golem Windows Setup Tasks
+# Run: mise run <task-name> | List: mise tasks ls
+
+[vars]
+vs_build_tools_id = "Microsoft.VisualStudio.2022.BuildTools"
+cmake_id = "Kitware.CMake"
+docker_id = "Docker.DockerDesktop"
+act_id = "nektos.act"
+nginx_id = "nginx"
+redis_id = "redis"
+memurai_id = "memurai-developer"
+nasm_id = "NASM.NASM"
+golem_cli_url = "https://github.com/golemcloud/golem-cli/releases/download/v1.3.0-dev.3/golem-x86_64-pc-windows-gnu.exe"
+
+[tasks.check-prerequisites]
+description = "Check Windows prerequisites"
+run = "winget --version"
+
+[tasks.install-build-tools]
+description = "Install Visual Studio Build Tools and CMake"
+depends = ["check-prerequisites"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = [
+    "if (!(winget list --id {{vars.vs_build_tools_id}} | Select-String '{{vars.vs_build_tools_id}}')) { winget install --id {{vars.vs_build_tools_id}} -e --override '--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart' } else { Write-Host 'Visual Studio Build Tools already installed' }",
+    "if (!(winget list --id {{vars.cmake_id}} | Select-String '{{vars.cmake_id}}')) { winget install --id {{vars.cmake_id}} -e } else { Write-Host 'CMake already installed' }"
+]
+
+[tasks.verify-build-tools]
+description = "Verify build tools installation"
+depends = ["install-build-tools"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = [
+    "$env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User'); cmake --version",
+    "$env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User'); where cl"
+]
+
+[tasks.install-rust]
+description = "Install Rust via mise"
+depends = ["verify-build-tools"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = [
+    "if (!(Get-Command rustup -ErrorAction SilentlyContinue)) { mise install } else { Write-Host 'Rust already installed via mise' }",
+    "rustup --version",
+    "cargo --version"
+]
+
+[tasks.install-dev-tools]
+description = "Install cargo-make"
+depends = ["install-rust"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "if (!(cargo install --list | Select-String 'cargo-make')) { cargo install cargo-make } else { Write-Host 'cargo-make already installed' }"
+
+[tasks.build-workspace]
+description = "Build entire workspace"
+depends = ["install-dev-tools"]
+run = "cargo build --workspace"
+
+[tasks.build-workspace-limited]
+description = "Build workspace with limited parallelism (for low RAM systems)"
+run = "cargo build --workspace -j 2"
+
+[tasks.test-workspace]
+description = "Run unit tests (no Docker/Redis required)"
+depends = ["build-workspace"]
+run = "cargo test --workspace --lib -- --nocapture"
+
+[tasks.test-workspace-limited]
+description = "Run unit tests with limited parallelism"
+depends = ["build-workspace-limited"]
+run = "cargo test --workspace --lib -j 2 -- --nocapture"
+
+[tasks.install-chocolatey]
+description = "Install Chocolatey package manager"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "if (!(Get-Command choco -ErrorAction SilentlyContinue)) { Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')) } else { Write-Host 'Chocolatey already installed' }"
+
+[tasks.install-services]
+description = "Install Nginx, Redis, and Memurai via Chocolatey"
+depends = ["install-chocolatey"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = [
+    "if (!(choco list --local-only | Select-String '{{vars.nginx_id}}')) { choco install {{vars.nginx_id}} -y } else { Write-Host 'Nginx already installed' }",
+    "if (!(choco list --local-only | Select-String '{{vars.redis_id}}')) { choco install {{vars.redis_id}} -y } else { Write-Host 'Redis already installed' }",
+    "if (!(choco list --local-only | Select-String '{{vars.memurai_id}}')) { choco install {{vars.memurai_id}} -y } else { Write-Host 'Memurai already installed' }"
+]
+
+[tasks.verify-services]
+description = "Check for Redis/Memurai processes"
+depends = ["install-services"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "Get-Process | Where-Object {$_.ProcessName -match 'golem|redis|memurai'} | Select-Object Id, ProcessName"
+
+[tasks.install-docker]
+description = "Install Docker Desktop"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "if (!(winget list --id {{vars.docker_id}} | Select-String '{{vars.docker_id}}')) { winget install --id {{vars.docker_id}} -e } else { Write-Host 'Docker Desktop already installed' }"
+
+[tasks.install-act]
+description = "Install act for GitHub Actions"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "if (!(winget list --id {{vars.act_id}} | Select-String '{{vars.act_id}}')) { winget install --id {{vars.act_id}} -e } else { Write-Host 'act already installed' }"
+
+[tasks.install-golem-cli]
+description = "Download Golem CLI"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = [
+    "if (!(Test-Path 'golem.exe')) { Invoke-WebRequest -Uri '{{vars.golem_cli_url}}' -OutFile 'golem.exe' } else { Write-Host 'Golem CLI already downloaded' }",
+    ".\\golem.exe --version"
+]
+
+[tasks.setup-golem-profile]
+description = "Setup Golem CLI profile"
+depends = ["install-golem-cli"]
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = ".\\golem.exe profile new --component-url http://localhost:8080/ --set-active cloud-local"
+
+[tasks.start-services]
+description = "Start all Golem services using cargo make"
+depends = ["test-workspace"]
+run = "cargo make run"
+
+[tasks.check-service-status]
+description = "Check Golem service processes"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "Get-Process -Id 6472,5856,7324,7932,4172,904,8944,3060 -ErrorAction SilentlyContinue | Select-Object Id,ProcessName"
+
+[tasks.check-service-ports]
+description = "Check service ports"
+run = "netstat -an | findstr \"8080 8085\""
+
+[tasks.clean-sqlite-db]
+description = "Clean SQLite databases"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "Remove-Item -Path '.\\local-run\\data\\*.db*','.\\local-run\\data\\*.sqlite*' -Force -ErrorAction SilentlyContinue"
+
+[tasks.setup-defender-exclusions]
+description = "Open Windows Defender settings"
+shell = "cmd /c"
+run = "start ms-settings:windowsdefender"
+
+[tasks.full-setup]
+description = "Complete Windows setup"
+depends = [
+    "check-prerequisites",
+    "install-build-tools", 
+    "verify-build-tools",
+    "install-rust",
+    "install-dev-tools",
+    "build-workspace",
+    "test-workspace",
+    "install-services",
+    "install-golem-cli"
+]
+run = "echo Full setup completed"
+
+[tasks.full-setup-with-optional]
+description = "Complete setup with Docker and act"
+depends = [
+    "full-setup",
+    "install-docker", 
+    "install-act"
+]
+run = "echo Full setup with optional tools completed"
+
+[tasks.troubleshoot-paths]
+description = "Check PATH for dev tools"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "Get-Command cargo,rustc,cmake,mise,winget -ErrorAction SilentlyContinue | Select-Object Name,Source"
+
+[tasks.memory-optimization]
+description = "Set RUSTFLAGS for memory optimization"
+shell = "powershell -ExecutionPolicy Bypass -Command"
+run = "[Environment]::SetEnvironmentVariable('RUSTFLAGS', '-Ccodegen-units=8', 'User')"

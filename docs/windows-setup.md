@@ -1,111 +1,201 @@
 # Windows setup (no WSL required)
 
-This guide sets up a native Windows development environment for Golem. It avoids Docker/WSL for regular build/test; Docker remains optional for integration tests.
+Native Windows development environment for Golem. Two setup approaches: **traditional commands** or **automated mise tasks**.
 
 ## Prerequisites
 
-* Windows 10/11 x64  
-* Administrator PowerShell session  
-* winget v1.6 or newer (check with `winget --version`)
-
-## 1) Install build tools
-
-Run in an **elevated PowerShell**:
-
-```powershell
-# Visual Studio Build Tools (C++ toolchain) — passive install, no restart
-winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
-
-# CMake
-winget install --id Kitware.CMake -e
-```
-
-Notes  
-• The VS Build Tools install is large and may take several minutes.  
-• A reboot may be required after first install if PATHs are missing.
-
-## 2) Install Rust via mise
-
-If you do not have mise:
+* Windows 10/11 x64, Administrator PowerShell, winget v1.6+
+* Mise (recommended for automation)
 
 ```powershell
 winget install jdx.mise
+# Add C:\Users\Administrator\AppData\Local\mise\shims to PATH
 ```
 
-From the repository root (contains `.mise.toml`):
+
+## 1) Install build tools
+
+Install VS Build Tools with C++ workload and CMake for native compilation.
 
 ```powershell
-mise install
-# verify
-rustup --version
-rustc  --version
-cargo  --version
+# Traditional approach
+winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
+winget install --id Kitware.CMake -e
 ```
 
-`.mise.toml` pins Rust to **stable** and installs the `wasm32-wasip1` target automatically.
+```powershell
+# Mise automation (includes verification)
+mise run install-build-tools
+mise run verify-build-tools
+```
+
+**Note:** VS Build Tools is large (~3GB). Reboot may be required.
+
+## 2) Install Rust
+
+Install Rust stable with wasm32-wasip1 target (required for WASM components).
+
+```powershell
+# Traditional approach (from repo root)
+mise install
+rustup --version && rustc --version && cargo --version
+```
+
+```powershell
+# Mise automation (includes verification)
+mise run install-rust
+```
 
 ## 3) Developer tools
 
+Install cargo-make task runner used by Golem build system.
+
 ```powershell
-# Cargo task runner used by this repo
+# Traditional approach
 cargo install cargo-make
+```
+
+```powershell
+# Mise automation
+mise run install-dev-tools
 ```
 
 ## 4) Build and test
 
-```powershell
-# Build entire workspace
-cargo build --workspace
+Build workspace and run unit tests (no Docker/Redis required).
 
-# Run unit tests only (no Docker/Redis required)
+```powershell
+# Traditional approach
+cargo build --workspace
 cargo test --workspace --lib -- --nocapture
 ```
 
-On machines with limited RAM you may need to build with lower parallelism to
-avoid linker or LLVM out-of-memory errors:
+```powershell
+# Mise automation
+mise run build-workspace
+mise run test-workspace
+```
 
 ```powershell
-cargo build --workspace -j 2
-cargo test  --workspace --lib -j 2 -- --nocapture
+# Low RAM systems (limited parallelism)
+mise run build-workspace-limited
+mise run test-workspace-limited
 ```
 
 If you run into linker errors for SQLite on Windows, ensure the VS Build Tools step completed successfully; the project uses SQLx with SQLite support and compiles C code as needed via MSVC.
 
 
-## Install Nginx, Redis, Memurai
+## 5) Services (Nginx, Redis, Memurai)
 
-Ensure you have Chocolatey installed:
+Install services required for local development.
 
 ```powershell
+# Traditional approach
 choco install nginx redis memurai-developer -y
+Get-Process | Where-Object {$_.ProcessName -match "golem|redis|memurai"}
 ```
 
-Verify Redis is working 
 ```powershell
-$  Get-Process | Where-Object {$_.ProcessName -match "golem|redis|memurai"} | Select-Object Id, ProcessName, CPU
-
-  Id ProcessName      CPU
-  -- -----------      ---
-4684 memurai     0.359375
-7228 memurai      0.40625
+# Mise automation (includes Chocolatey install + verification)
+mise run install-services
+mise run verify-services
 ```
 
-## 5) Optional: Docker Desktop and act
+## 6) Optional: Docker and GitHub Actions
 
-Some integration tests use Docker and Redis. Docker is optional for regular dev.
+Docker for integration tests, act for local CI testing.
 
 ```powershell
-# Docker Desktop (requires virtualization; WSL2 backend recommended)
+# Traditional approach
 winget install --id Docker.DockerDesktop -e
-
-# act (runs GitHub Actions locally; Linux jobs only)
 winget install --id nektos.act -e
 ```
 
-Notes  
-• The Windows CI job runs on GitHub (`windows-2022`). `act` does **not** emulate Windows runners; use it only for Linux jobs.  
+```powershell
+# Mise automation
+mise run install-docker
+mise run install-act
+```
 
-## 6) Troubleshooting
+**Note:** act only emulates Linux jobs, not Windows runners.  
+
+## Task Status and Known Issues
+
+### Working Tasks 
+- `check-prerequisites` - Verifies winget is available
+- `install-golem-cli` - Downloads Golem CLI binary (with idempotency check)
+- All install tasks now include smart checks to avoid reinstalling existing tools
+
+### Tasks with Issues ⚠️
+**Critical Issue**: mise tasks have fundamental execution problems on Windows. Despite applying proper shell configuration (`shell = "powershell -ExecutionPolicy Bypass -Command"`), PATH refresh fixes, and idempotency checks, the tasks still hang or fail to execute commands properly.
+
+**Affected Tasks**:
+- `install-build-tools` - Visual Studio Build Tools & CMake installation
+- `verify-build-tools` - cmake not found in PATH after winget install
+- `install-rust` - Rust installation via mise
+- `install-dev-tools` - cargo-make installation
+- `install-chocolatey` - Chocolatey package manager
+- `install-services` - Nginx, Redis, Memurai via Chocolatey
+- `build-workspace` - Cargo build commands
+- `test-workspace` - Cargo test commands
+
+**Root Causes Identified**:
+1. **PATH Issues**: winget installations don't update PATH in current session
+2. **PowerShell Execution Context**: Commands hang even with proper shell configuration
+3. **Terminal Session Isolation**: mise tasks run in isolated contexts that don't inherit environment changes
+
+**Attempted Fixes**:
+- ✅ Added `shell = "powershell -ExecutionPolicy Bypass -Command"` 
+- ✅ Added PATH refresh: `$env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')`
+- ✅ Added idempotency checks to prevent reinstalling existing tools
+- ✅ Fixed missing template variables (`nginx_id`, `redis_id`, `memurai_id`)
+- ❌ **Still not working**: Commands still hang or fail to execute
+
+### Manual Execution Required 
+**Recommended Approach**: Use the traditional PowerShell commands listed above instead of mise tasks for:
+- All installation tasks requiring elevated permissions
+- Build and test operations
+- Service installations via Chocolatey
+
+**Working mise tasks for basic operations**:
+- `check-prerequisites`
+- `install-golem-cli` (file download only)
+
+### Troubleshooting Notes
+- Tasks show dependency execution but hang on actual command execution
+- PowerShell execution policy may need adjustment for mise task context
+- Some tasks may require running PowerShell as Administrator
+- Network connectivity required for all download/install operations
+
+### aws-lc-sys Build Dependencies
+**Critical for cargo build to work**: The aws-lc-sys crate requires three dependencies:
+
+1. **CMake** - `winget install Kitware.CMake`
+2. **NASM assembler** - `winget install NASM.NASM`  
+3. **LLVM/Clang** - `winget install LLVM.LLVM`
+
+**Important**: After installing these dependencies:
+- **Restart your terminal session** to pick up PATH changes
+- Set `LIBCLANG_PATH` environment variable to the clang/bin directory
+- Run cargo build with **Administrator privileges**
+
+Without these dependencies, you'll see "Missing dependency: cmake" errors during cargo build.
+
+## 7) Complete setup
+
+Run full automated setup excluding optional components.
+
+```powershell
+# Complete setup (recommended)
+mise run full-setup
+```
+
+```powershell
+# With Docker/act
+mise run full-setup-with-optional
+```
+
+## 8) Troubleshooting
 
 * Open a **new terminal** after tool installs to refresh PATH.  
 * If `cargo` is not found, check `%USERPROFILE%\.cargo\bin` is in PATH.  
@@ -122,65 +212,62 @@ Notes
     Increase or decrease this to match your hardware.  
   • You can also reduce per-crate code-generation memory:  
 
-    ```powershell
-    set RUSTFLAGS=-Ccodegen-units=8
-    ```
-   
-
-  • After running `cargo make run`, you can check the status of the services with:   
-
-    ```powershell
-    Get-Process -Id 6472,5856,7324,7932,4172,904,8944,3060 -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, CPU, StartTime
-    ```
-
-  • After running `cargo make run`, you can check the ports of the services with:   
-
-    ```powershell
-    netstat -an | findstr "8080\|8085"
-    ```
-
-  • After running `cargo make run`, you can check the help of the services with:   
-
-    ```powershell
-    PS C:\Users\Administrator\golem> cd .\cloud-service\ 
-    PS C:\Users\Administrator\golem\cloud-service> $env:RUST_LOG="info"; $env:GOLEM__HTTP_PORT="8080"; $env:GOLEM__GRPC_PORT="9090"; $env:GOLEM__LOGIN__TYPE="Disabled"; $env:GOLEM__DB__TYPE="Sqlite"; $env:GOLEM__DB__CONFIG__DATABASE="../local-run/data/golem_cloud_service.db"; $env:GOLEM__ACCOUNTS__ROOT__TOKEN="5c832d93-ff85-4a8f-9803-513950fdfdb1"; ..\target\debug\cloud-service.exe --help
-    ```
-
-    if SqLlite is corrupted, remove using 
-
-    ```powershell
-    Remove-Item -Path ".\local-run\data\*.db*" -Force -ErrorAction SilentlyContinue; Remove-Item -Path ".\local-run\data\*.sqlite*" -Force -ErrorAction SilentlyContinue
-    ```
+```powershell
+# Memory optimization
+set RUSTFLAGS=-Ccodegen-units=8
+```
 
 
-  ## Golem CLI
+```powershell
+# Mise automation for troubleshooting
+mise run troubleshoot-paths
+mise run memory-optimization
+mise run clean-sqlite-db
+```
 
-  
-  Invoke-WebRequest -Uri "https://github.com/golemcloud/golem-cli/releases/download/v1.3.0-dev.3/golem-x86_64-pc-windows-gnu.exe" -OutFile "golem.exe"
+## 9) Golem CLI
 
-  .\golem.exe --version
-golem 1.3.0-dev.3
+Download and setup Golem CLI for component management.
 
+```powershell
+# Traditional approach
+Invoke-WebRequest -Uri "https://github.com/golemcloud/golem-cli/releases/download/v1.3.0-dev.3/golem-x86_64-pc-windows-gnu.exe" -OutFile "golem.exe"
+.\golem.exe --version
 .\golem.exe profile new --component-url http://localhost:8080/ --set-active cloud-local
+```
 
-.\golem.exe component list
+```powershell
+# Mise automation
+mise run install-golem-cli
+mise run setup-golem-profile
+```
 
-# Misc
+## 10) Start services
 
-Add Windows Defender Exclusions (Recommended)
+Start all Golem services for development.
 
+```powershell
+# Traditional approach
+cargo make run
+```
 
-start ms-settings:windowsdefender
+```powershell
+# Mise automation (includes service monitoring)
+mise run start-services
+mise run check-service-status
+mise run check-service-ports
+```
 
-Windows Defender Exclusion Fix:
-Manual Steps:
+## 11) Windows Defender exclusions
 
-Windows Security should now be open
-Click "Virus & threat protection"
-Click "Manage settings" under Virus & threat protection settings
-Scroll down to "Exclusions"
-Click "Add or remove exclusions"
-Add these 3 folders:
-C:\Users\Administrator\golem (your project folder)
-C:\Users\Administrator\.cargo (Cargo cache)
-C:\Users\Administrator\.rustup (Rustup toolchain)
+Add exclusions for better build performance.
+
+```powershell
+# Mise automation (opens settings + shows paths)
+mise run setup-defender-exclusions
+```
+
+Manually add:
+- `C:\Users\Administrator\golem` (project)
+- `C:\Users\Administrator\.cargo` (cache) 
+- `C:\Users\Administrator\.rustup` (toolchain)
