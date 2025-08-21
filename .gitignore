@@ -29,3 +29,8 @@ data
 .vscode/
 .cursorrules
 .cursorignore
+
+# MCP server specific
+mcp-server.log
+mcp-server-*.log
+.mcp-server/

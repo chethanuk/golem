@@ -23,6 +23,10 @@ members = [
     "cli/golem",
     "cli/golem-cli",
     "cli/golem-templates",
+    "cli/golem-mcp-types",
+    "cli/golem-mcp-server",
+    "cli/golem-mcp-tools",
+    "cli/golem-mcp-resources",
 ]
 
 exclude = [
@@ -99,6 +103,10 @@ golem-service-base = { version = "=0.0.0", path = "golem-service-base" }
 golem-shard-manager = { path = "golem-shard-manager" }
 golem-templates = { version = "=0.0.0", path = "cli/golem-templates" }
 golem-test-framework = { version = "=0.0.0", path = "golem-test-framework" }
+golem-mcp-types = { version = "=0.0.0", path = "cli/golem-mcp-types" }
+golem-mcp-server = { version = "=0.0.0", path = "cli/golem-mcp-server" }
+golem-mcp-tools = { version = "=0.0.0", path = "cli/golem-mcp-tools" }
+golem-mcp-resources = { version = "=0.0.0", path = "cli/golem-mcp-resources" }
 golem-wasm-ast = { version = "=0.0.0", path = "wasm-ast", default-features = false }
 golem-wasm-rpc = { version = "=0.0.0", path = "wasm-rpc", default-features = false }
 golem-wasm-rpc-derive = { version = "=0.0.0", path = "wasm-rpc-derive" }

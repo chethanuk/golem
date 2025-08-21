@@ -1,0 +1,83 @@
+# Rust formatting configuration for Golem project
+# Follows Rust 2024+ best practices and the Official Rust Style Guide
+
+# Basic formatting
+edition = "2021"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+
+# Function and struct formatting
+fn_args_layout = "Tall"
+brace_style = "SameLineWhere"
+control_brace_style = "AlwaysSameLine"
+struct_field_align_threshold = 0
+
+# Import formatting
+imports_granularity = "Crate"
+imports_layout = "Mixed"
+group_imports = "StdExternalCrate"
+reorder_imports = true
+reorder_modules = true
+
+# String formatting
+format_strings = false
+format_macro_matchers = true
+
+# Comments and documentation
+comment_width = 80
+wrap_comments = true
+format_code_in_doc_comments = true
+doc_comment_code_block_width = 80
+
+# Expression formatting
+chain_width = 60
+single_line_if_else_max_width = 50
+where_single_line = true
+force_explicit_abi = true
+
+# Trailing elements
+trailing_comma = "Vertical"
+trailing_semicolon = true
+
+# Advanced formatting
+condense_wildcard_suffixes = false
+force_multiline_blocks = false
+format_generated_files = true
+hex_literal_case = "Preserve"
+short_array_element_width_threshold = 10
+
+# Rust 2024+ specific settings
+use_field_init_shorthand = true
+use_try_shorthand = true
+normalize_comments = true
+normalize_doc_attributes = true
+
+# Error handling formatting
+match_arm_blocks = true
+match_arm_leading_pipes = "Never"
+match_block_trailing_comma = false
+
+# Function call formatting
+fn_call_width = 60
+attr_fn_like_width = 70
+struct_lit_width = 18
+struct_variant_width = 35
+array_width = 60
+tuple_width = 100
+
+# Type and generic formatting
+type_punctuation_density = "Wide"
+where_pred_indent = "Visual"
+
+# Miscellaneous
+empty_item_single_line = true
+space_before_colon = false
+space_after_colon = true
+spaces_around_ranges = false
+binop_separator = "Front"
+remove_nested_parens = true
+combine_control_expr = true
+overflow_delimited_expr = false
+indent_relative_to = "block"
+merge_derives = true

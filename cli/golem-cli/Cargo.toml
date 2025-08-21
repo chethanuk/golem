@@ -12,7 +12,7 @@ build = "build.rs"
 
 [features]
 default = []
-server-commands = []
+server-commands = ["golem-mcp-server"]
 
 [lib]
 harness = false
@@ -37,6 +37,9 @@ golem-rib-repl = { workspace = true }
 golem-wasm-ast = { workspace = true, default-features = true }
 golem-wasm-rpc = { workspace = true, default-features = true }
 golem-wasm-rpc-derive = { workspace = true }
+
+# MCP server functionality
+golem-mcp-server = { workspace = true, optional = true }
 
 # External deps
 anyhow = { workspace = true }

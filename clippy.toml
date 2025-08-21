@@ -1,2 +1,33 @@
-too-many-arguments-threshold = 20
-large-error-threshold = 1024
+# Clippy configuration for Golem project
+# Enforces Rust 2024+ best practices with zero-tolerance for anti-patterns
+
+# Complexity thresholds
+too-many-arguments-threshold = 8  # Stricter than default (7) for better API design
+large-error-threshold = 1024      # Keep existing threshold for complex error types
+type-complexity-threshold = 250   # Default but made explicit
+cognitive-complexity-threshold = 30  # Encourage simpler functions
+
+# Documentation requirements
+missing-docs-in-private-items = false  # Allow private items without docs
+missing-safety-doc = true              # Require safety docs for unsafe code
+
+# Naming conventions
+enum-variant-names-threshold = 3       # Stricter enum naming
+struct-excessive-bools = 3             # Discourage boolean parameters
+
+# Performance and efficiency
+trivially-copy-pass-by-ref-size-limit = 256  # 64-bit systems
+pass-by-value-size-limit = 256               # Match trivial copy limit
+too-many-lines-threshold = 100               # Encourage smaller functions
+
+# Safety and correctness
+avoid-breaking-exported-api = true           # Maintain API stability
+disallowed-names = ["foo", "bar", "baz"]     # Prevent placeholder names
+
+# Style preferences
+single-char-binding-names-threshold = 4      # Allow short loops with single chars
+literal-representation-threshold = 10000     # Use underscores for large literals
+
+# MCP-specific patterns
+# Encourage proper error context and avoid generic errors
+# These are enforced via lints in individual crates

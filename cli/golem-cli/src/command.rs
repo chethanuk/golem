@@ -1846,6 +1846,18 @@ pub mod server {
         },
         /// Clean the local server data directory
         Clean,
+        /// Run MCP (Model Context Protocol) server to expose CLI via MCP
+        Mcp {
+            /// Port to serve the MCP API on, defaults to 1232
+            #[clap(long, short, default_value = "1232")]
+            serve_port: u16,
+            /// Address to bind the MCP server to, defaults to localhost
+            #[clap(long, default_value = "localhost")]
+            serve_host: String,
+            /// Enable verbose logging for MCP server
+            #[clap(long)]
+            verbose: bool,
+        },
     }
 }
 

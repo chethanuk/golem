@@ -32,10 +32,54 @@ mod hooks {
         #[cfg(feature = "server-commands")]
         async fn handler_server_commands(
             &self,
-            _ctx: Arc<Context>,
-            _subcommand: ServerSubcommand,
+            ctx: Arc<Context>,
+            subcommand: ServerSubcommand,
         ) -> anyhow::Result<()> {
-            unimplemented!()
+            match subcommand {
+                ServerSubcommand::Mcp { serve_port, serve_host, verbose } => {
+                    use golem_mcp_server::{GolemMcpServer, ServerConfig};
+                    
+                    // Set up logging if verbose is enabled
+                    if verbose {
+                        eprintln!("Starting MCP server on {}:{}", serve_host, serve_port);
+                    }
+                    
+                    // Create server configuration
+                    let config = ServerConfig {
+                        name: "Golem CLI MCP Server".to_string(),
+                        version: env!("CARGO_PKG_VERSION").to_string(),
+                        port: serve_port,
+                        host: serve_host.clone(),
+                        allow_origins: vec!["*".to_string()], // Allow all origins for development
+                        max_request_size: 1024 * 1024, // 1MB max request size
+                        request_timeout: std::time::Duration::from_secs(300), // 5 minute timeout
+                        enable_logging: verbose,
+                    };
+                    
+                    // Create and start the MCP server
+                    let server = GolemMcpServer::new(config).await?;
+                    
+                    println!("🚀 Golem CLI MCP Server running at http://{}:{}", serve_host, serve_port);
+                    println!("📋 Available at: http://{}:{}/mcp", serve_host, serve_port);
+                    println!("🏥 Health check: http://{}:{}/mcp/health", serve_host, serve_port);
+                    println!("⚡ Capabilities: http://{}:{}/mcp/capabilities", serve_host, serve_port);
+                    
+                    if verbose {
+                        println!("🔧 All Golem CLI commands are available via MCP tools");
+                        println!("📄 Manifest resources are discoverable via MCP resources");
+                    }
+                    
+                    // Start the server (this will run indefinitely)
+                    server.serve().await?;
+                    
+                    Ok(())
+                }
+                _ => {
+                    // Handle other server commands (Run, Clean) - delegate to default behavior
+                    eprintln!("Server command not implemented in MCP context");
+                    Ok(())
+                }
+            }
         }
 
         #[cfg(feature = "server-commands")]

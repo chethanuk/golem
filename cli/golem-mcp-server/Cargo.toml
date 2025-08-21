@@ -1,0 +1,75 @@
+[package]
+name = "golem-mcp-server"
+version = "0.0.0"
+edition = "2021"
+authors = ["Golem Cloud"]
+license-file = "../../LICENSE"
+description = "Model Context Protocol (MCP) server implementation for Golem CLI"
+repository = "https://github.com/golemcloud/golem"
+homepage = "https://golem.cloud"
+
+[dependencies]
+# Internal dependencies
+golem-mcp-types = { workspace = true }
+golem-mcp-tools = { workspace = true }
+golem-mcp-resources = { workspace = true }
+
+# Async runtime and HTTP
+tokio = { workspace = true, features = ["full"] }
+axum = { workspace = true, features = ["http2", "ws"] }
+tower = "0.5.1"
+tower-http = { version = "0.6.2", features = ["cors", "trace", "timeout"] }
+hyper = { workspace = true }
+http = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Async traits (required for trait implementations)
+async-trait = { workspace = true }
+
+# Process and system utilities
+which = "6.0.3"
+
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+url = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Configuration
+clap = { workspace = true, features = ["derive", "env"] }
+figment = { workspace = true }
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+rstest = "0.23.0"
+proptest = { workspace = true }
+axum-test = "16.3.0"
+wiremock = "0.6.2"
+
+[features]
+default = ["http-transport"]
+http-transport = []
+
+# Development lints
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+# Allow some pedantic lints for development
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"

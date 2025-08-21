@@ -1,0 +1,50 @@
+[package]
+name = "golem-mcp-types"
+version = "0.0.0"
+edition = "2021"
+authors = ["Golem Cloud"]
+license-file = "../../LICENSE"
+description = "Model Context Protocol (MCP) type definitions and serialization for Golem CLI"
+repository = "https://github.com/golemcloud/golem"
+homepage = "https://golem.cloud"
+
+[dependencies]
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Async runtime and traits
+tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
+
+# HTTP support
+http = { workspace = true }
+url = { workspace = true }
+
+# Utility
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+# Testing
+tokio-test = "0.4"
+rstest = "0.23.0"
+proptest = { workspace = true }
+
+# Development lints
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+# Allow some pedantic lints for development
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
