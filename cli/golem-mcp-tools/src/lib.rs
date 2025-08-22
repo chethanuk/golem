@@ -23,11 +23,14 @@
 #![deny(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod direct_executor;
 pub mod executor;
+mod integration_test;
 pub mod registry;
 pub mod schema;
 pub mod tools;
 
+pub use direct_executor::DirectExecutor;
 pub use executor::ToolExecutor;
 pub use registry::ToolRegistry;
 

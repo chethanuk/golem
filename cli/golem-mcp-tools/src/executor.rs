@@ -114,16 +114,19 @@ impl ToolExecutor {
     #[instrument(skip(self), fields(tool = %context.tool_name, request_id = %context.request_id))]
     pub async fn execute(&self, context: ExecutionContext) -> McpResult<ExecutionResult> {
         // Check concurrent execution limit
-        let current_count = self.running_count.load(std::sync::atomic::Ordering::Acquire);
+        let current_count = self
+            .running_count
+            .load(std::sync::atomic::Ordering::Acquire);
         if current_count >= self.max_concurrent {
             return Err(McpError::internal(format!(
-                "Maximum concurrent executions reached: {current_count}/{}", 
+                "Maximum concurrent executions reached: {current_count}/{}",
                 self.max_concurrent
             )));
         }
 
         // Increment running count
-        self.running_count.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+        self.running_count
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
 
         // Ensure we decrement on exit
         let _guard = ExecutionGuard {
@@ -135,7 +138,7 @@ impl ToolExecutor {
 
         // Build command arguments from parameters
         let args = self.build_command_args(&context)?;
-        
+
         // Prepare command
         let mut command = Command::new(&self.cli_path);
         command
@@ -145,7 +148,10 @@ impl ToolExecutor {
             .stdin(Stdio::null());
 
         // Set working directory
-        if let Some(ref wd) = context.working_directory.or_else(|| self.working_directory.clone()) {
+        if let Some(ref wd) = context
+            .working_directory
+            .or_else(|| self.working_directory.clone())
+        {
             command.current_dir(wd);
         }
 
@@ -156,7 +162,7 @@ impl ToolExecutor {
 
         // Execute with timeout - spawn the command first, then apply timeout to waiting
         let execution_timeout = context.timeout.unwrap_or(self.default_timeout);
-        
+
         // Spawn command synchronously (this is fast and doesn't need timeout)
         let child = match command.spawn() {
             Ok(child) => child,
@@ -168,14 +174,19 @@ impl ToolExecutor {
                 ));
             }
         };
-        
-        // Apply timeout to the actual execution (waiting for completion) 
-        let result = match timeout(execution_timeout, async move { child.wait_with_output().await }).await {
+
+        // Apply timeout to the actual execution (waiting for completion)
+        let result = match timeout(
+            execution_timeout,
+            async move { child.wait_with_output().await },
+        )
+        .await
+        {
             Ok(Ok(output)) => {
                 let duration = start_time.elapsed();
                 let exit_code = output.status.code().unwrap_or(-1);
                 let success = output.status.success();
-                
+
                 ExecutionResult {
                     exit_code,
                     stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
@@ -213,7 +224,7 @@ impl ToolExecutor {
         // This is a placeholder implementation
         // In a real implementation, this would parse the tool parameters
         // and build the appropriate golem CLI arguments
-        
+
         match context.tool_name.as_str() {
             "golem_component_list" => Ok(vec!["component".to_owned(), "list".to_owned()]),
             "golem_worker_list" => Ok(vec!["worker".to_owned(), "list".to_owned()]),
@@ -228,7 +239,9 @@ impl ToolExecutor {
     #[must_use]
     pub fn execution_stats(&self) -> ExecutionStats {
         ExecutionStats {
-            running_count: self.running_count.load(std::sync::atomic::Ordering::Acquire),
+            running_count: self
+                .running_count
+                .load(std::sync::atomic::Ordering::Acquire),
             max_concurrent: self.max_concurrent,
             default_timeout: self.default_timeout,
         }
@@ -253,7 +266,8 @@ struct ExecutionGuard {
 
 impl Drop for ExecutionGuard {
     fn drop(&mut self) {
-        self.counter.fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
+        self.counter
+            .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
     }
 }
 
@@ -304,7 +318,7 @@ mod tests {
             duration: Duration::from_secs(1),
             success: true,
         };
-        
+
         assert!(result.is_success());
         assert_eq!(result.combined_output(), "success");
     }
@@ -318,7 +332,7 @@ mod tests {
             duration: Duration::from_secs(1),
             success: false,
         };
-        
+
         assert!(!result.is_success());
         assert_eq!(result.combined_output(), "output\nerror");
     }

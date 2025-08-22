@@ -3,28 +3,24 @@
 //! Provides HTTP transport using axum for serving MCP requests over HTTP.
 
 use crate::handlers::MessageHandlerImpl;
-use golem_mcp_types::{
-    error::{McpError, McpResult},
-    protocol::JsonRpcMessage,
-    transport::{HttpTransportConfig, MessageHandler},
-    serialization::{MessageSerializer, MessageBuilder},
-};
 use axum::{
     extract::State,
-    http::{StatusCode, HeaderMap},
+    http::{HeaderMap, StatusCode},
     response::Json,
     routing::post,
     Router,
 };
+use golem_mcp_types::{
+    error::{McpError, McpResult},
+    protocol::JsonRpcMessage,
+    serialization::{MessageBuilder, MessageSerializer},
+    transport::{HttpTransportConfig, MessageHandler},
+};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::{
-    cors::CorsLayer,
-    trace::TraceLayer,
-    timeout::TimeoutLayer,
-};
-use tracing::{info, error, debug};
+use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
+use tracing::{debug, error, info};
 
 /// HTTP transport for MCP protocol
 #[derive(Debug)]
@@ -58,31 +54,25 @@ impl HttpTransport {
     /// Returns `McpError::Transport` if the server cannot start.
     pub async fn serve(self, message_handler: Arc<MessageHandlerImpl>) -> McpResult<()> {
         let state = AppState { message_handler };
-        
+
         let app = self.create_app(state);
         let addr = format!("{}:{}", self.config.host, self.config.port);
-        
+
         info!("Starting HTTP transport on {}", addr);
-        
+
         let listener = TcpListener::bind(&addr).await.map_err(|e| {
-            McpError::transport(
-                "http".to_owned(),
-                format!("Failed to bind to {addr}: {e}"),
-            )
+            McpError::transport("http".to_owned(), format!("Failed to bind to {addr}: {e}"))
         })?;
 
-        axum::serve(listener, app).await.map_err(|e| {
-            McpError::transport(
-                "http".to_owned(),
-                format!("HTTP server error: {e}"),
-            )
-        })
+        axum::serve(listener, app)
+            .await
+            .map_err(|e| McpError::transport("http".to_owned(), format!("HTTP server error: {e}")))
     }
 
     /// Create the axum application
     fn create_app(&self, state: AppState) -> Router {
         let timeout_duration = std::time::Duration::from_millis(self.config.request_timeout_ms);
-        
+
         Router::new()
             .route("/mcp", post(handle_mcp_request))
             .route("/health", axum::routing::get(health_check))
@@ -107,7 +97,11 @@ async fn handle_mcp_request(
 
     // Validate content type
     if let Some(content_type) = headers.get("content-type") {
-        if !content_type.to_str().unwrap_or("").contains("application/json") {
+        if !content_type
+            .to_str()
+            .unwrap_or("")
+            .contains("application/json")
+        {
             return Err((
                 StatusCode::BAD_REQUEST,
                 "Content-Type must be application/json".to_owned(),
@@ -158,20 +152,20 @@ async fn health_check() -> Json<serde_json::Value> {
 }
 
 /// Serialize response to JSON value
-fn serialize_response(response: &JsonRpcMessage) -> Result<serde_json::Value, (StatusCode, String)> {
+fn serialize_response(
+    response: &JsonRpcMessage,
+) -> Result<serde_json::Value, (StatusCode, String)> {
     match MessageSerializer::serialize_message(response) {
-        Ok(json_str) => {
-            match serde_json::from_str(&json_str) {
-                Ok(json_value) => Ok(json_value),
-                Err(e) => {
-                    error!("Failed to parse serialized response: {}", e);
-                    Err((
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Failed to serialize response".to_owned(),
-                    ))
-                }
+        Ok(json_str) => match serde_json::from_str(&json_str) {
+            Ok(json_value) => Ok(json_value),
+            Err(e) => {
+                error!("Failed to parse serialized response: {}", e);
+                Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to serialize response".to_owned(),
+                ))
             }
-        }
+        },
         Err(e) => {
             error!("Failed to serialize response: {}", e);
             Err((
@@ -185,23 +179,24 @@ fn serialize_response(response: &JsonRpcMessage) -> Result<serde_json::Value, (S
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum_test::TestServer;
-    use golem_mcp_types::protocol::{JsonRpcRequest, JsonRpcId};
     use crate::config::McpServerConfig;
+    use axum_test::TestServer;
 
     #[tokio::test]
     async fn test_health_check() {
         let config = McpServerConfig::default();
-        let message_handler = Arc::new(MessageHandlerImpl::new(config).await.unwrap());
+        let message_handler = Arc::new(MessageHandlerImpl::new(config).await.expect("Message handler should initialize"));
         let state = AppState { message_handler };
-        
-        let transport = HttpTransport::new(HttpTransportConfig::default()).await.unwrap();
+
+        let transport = HttpTransport::new(HttpTransportConfig::default())
+            .await
+            .expect("Transport should initialize");
         let app = transport.create_app(state);
-        let server = TestServer::new(app).unwrap();
+        let server = TestServer::new(app).expect("Test server should start");
 
         let response = server.get("/health").await;
         assert_eq!(response.status_code(), 200);
-        
+
         let body: serde_json::Value = response.json();
         assert_eq!(body["status"], "healthy");
     }
@@ -209,20 +204,22 @@ mod tests {
     #[tokio::test]
     async fn test_mcp_request_invalid_json() {
         let config = McpServerConfig::default();
-        let message_handler = Arc::new(MessageHandlerImpl::new(config).await.unwrap());
+        let message_handler = Arc::new(MessageHandlerImpl::new(config).await.expect("Message handler should initialize"));
         let state = AppState { message_handler };
-        
-        let transport = HttpTransport::new(HttpTransportConfig::default()).await.unwrap();
+
+        let transport = HttpTransport::new(HttpTransportConfig::default())
+            .await
+            .expect("Transport should initialize");
         let app = transport.create_app(state);
-        let server = TestServer::new(app).unwrap();
+        let server = TestServer::new(app).expect("Test server should start");
 
         let response = server
             .post("/mcp")
             .json(&serde_json::json!({"invalid": "json-rpc"}))
             .await;
-            
+
         assert_eq!(response.status_code(), 200); // Should return JSON-RPC error, not HTTP error
-        
+
         let body: serde_json::Value = response.json();
         assert!(body.get("error").is_some());
     }

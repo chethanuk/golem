@@ -403,21 +403,20 @@ mod tests {
     #[test]
     fn test_error_response_from_mcp_error() {
         let mcp_error = McpError::authorization("invalid token".to_owned());
-        let error_response = JsonRpcErrorResponse::from_mcp_error(
-            Some(JsonRpcId::from("test-id")),
-            &mcp_error,
-        );
+        let error_response =
+            JsonRpcErrorResponse::from_mcp_error(Some(JsonRpcId::from("test-id")), &mcp_error);
 
         assert_eq!(error_response.error.code, -32_601);
-        assert!(error_response.error.message.contains("Authorization failed"));
+        assert!(error_response
+            .error
+            .message
+            .contains("Authorization failed"));
     }
 
     #[test]
     fn test_mcp_capabilities_serialization() {
         let capabilities = McpCapabilities {
-            tools: Some(ToolsCapability {
-                list_changed: true,
-            }),
+            tools: Some(ToolsCapability { list_changed: true }),
             resources: Some(ResourcesCapability {
                 subscribe: false,
                 list_changed: true,
@@ -429,7 +428,8 @@ mod tests {
         };
 
         let json = serde_json::to_string(&capabilities).expect("should serialize");
-        let deserialized: McpCapabilities = serde_json::from_str(&json).expect("should deserialize");
+        let deserialized: McpCapabilities =
+            serde_json::from_str(&json).expect("should deserialize");
         assert_eq!(capabilities, deserialized);
     }
 }

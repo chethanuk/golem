@@ -3,9 +3,12 @@
 //! Demonstrates the fundamental MCP protocol types and their usage.
 
 use golem_mcp_types::{
-    protocol::{JsonRpcRequest, JsonRpcId, McpServerInfo, McpImplementation, InitializeParams, McpClientInfo, McpCapabilities},
-    serialization::{MessageSerializer, MessageBuilder},
     error::McpError,
+    protocol::{
+        InitializeParams, JsonRpcId, JsonRpcRequest, McpCapabilities, McpClientInfo,
+        McpImplementation, McpServerInfo,
+    },
+    serialization::{MessageBuilder, MessageSerializer},
 };
 use std::collections::HashMap;
 
@@ -51,13 +54,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Demonstrate error handling
     let error = McpError::authorization("Example authorization error".to_owned());
-    println!("✅ Created structured error (code: {}): {}", error.code(), error);
+    println!(
+        "✅ Created structured error (code: {}): {}",
+        error.code(),
+        error
+    );
 
     // Create capabilities
     let capabilities = McpCapabilities {
-        tools: Some(golem_mcp_types::protocol::ToolsCapability {
-            list_changed: true,
-        }),
+        tools: Some(golem_mcp_types::protocol::ToolsCapability { list_changed: true }),
         resources: Some(golem_mcp_types::protocol::ResourcesCapability {
             subscribe: false,
             list_changed: true,
@@ -70,8 +75,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
         }),
     };
-    println!("✅ Created MCP capabilities with {} tool support", 
-        if capabilities.tools.is_some() { "with" } else { "without" });
+    println!(
+        "✅ Created MCP capabilities with {} tool support",
+        if capabilities.tools.is_some() {
+            "with"
+        } else {
+            "without"
+        }
+    );
 
     println!("\n🎉 All basic MCP types working correctly!");
     println!("The Golem MCP server workspace is ready for development.");

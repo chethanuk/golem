@@ -34,3 +34,7 @@ data
 mcp-server.log
 mcp-server-*.log
 .mcp-server/
+
+
+PROGRESS_STREAMING.md
+Requirements-Analysis.MD

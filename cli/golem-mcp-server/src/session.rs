@@ -4,7 +4,7 @@
 
 use golem_mcp_types::{
     error::{McpError, McpResult},
-    protocol::{McpClientInfo, McpCapabilities},
+    protocol::{McpCapabilities, McpClientInfo},
     transport::ConnectionInfo,
 };
 use std::collections::HashMap;
@@ -75,7 +75,7 @@ impl SessionManager {
     pub fn create_session(&mut self, connection_info: ConnectionInfo) -> SessionId {
         let session_id = SessionId(Uuid::new_v4());
         let now = chrono::Utc::now();
-        
+
         let session = ClientSession {
             id: session_id,
             client_info: None,
@@ -85,7 +85,7 @@ impl SessionManager {
             created_at: now,
             last_activity: now,
         };
-        
+
         debug!("Creating new session: {}", session_id.0);
         self.sessions.insert(session_id, session);
         session_id
@@ -102,7 +102,9 @@ impl SessionManager {
         client_info: McpClientInfo,
         client_capabilities: McpCapabilities,
     ) -> McpResult<()> {
-        let session = self.sessions.get_mut(&session_id)
+        let session = self
+            .sessions
+            .get_mut(&session_id)
             .ok_or_else(|| McpError::invalid_request("Session not found".to_owned()))?;
 
         if session.state != SessionState::Created {
@@ -130,7 +132,9 @@ impl SessionManager {
     ///
     /// Returns `McpError::InvalidRequest` if the session doesn't exist or is in an invalid state.
     pub fn mark_session_ready(&mut self, session_id: SessionId) -> McpResult<()> {
-        let session = self.sessions.get_mut(&session_id)
+        let session = self
+            .sessions
+            .get_mut(&session_id)
             .ok_or_else(|| McpError::invalid_request("Session not found".to_owned()))?;
 
         if session.state != SessionState::Initializing {
@@ -171,17 +175,19 @@ impl SessionManager {
     ///
     /// Returns `McpError::InvalidRequest` if the session doesn't exist.
     pub async fn close_session(&mut self, session_id: SessionId) -> McpResult<()> {
-        let session = self.sessions.get_mut(&session_id)
+        let session = self
+            .sessions
+            .get_mut(&session_id)
             .ok_or_else(|| McpError::invalid_request("Session not found".to_owned()))?;
 
         debug!("Closing session: {}", session_id.0);
         session.state = SessionState::Closing;
-        
+
         // Perform cleanup here if needed
-        
+
         session.state = SessionState::Closed;
         self.sessions.remove(&session_id);
-        
+
         info!("Session {} closed", session_id.0);
         Ok(())
     }
@@ -193,20 +199,21 @@ impl SessionManager {
     /// Returns errors encountered during session cleanup.
     pub async fn close_all_sessions(&mut self) -> McpResult<()> {
         let session_ids: Vec<SessionId> = self.sessions.keys().copied().collect();
-        
+
         for session_id in session_ids {
             if let Err(e) = self.close_session(session_id).await {
                 tracing::error!("Error closing session {}: {}", session_id.0, e);
             }
         }
-        
+
         Ok(())
     }
 
     /// Clean up expired sessions
     pub fn cleanup_expired_sessions(&mut self, max_idle_duration: chrono::Duration) {
         let now = chrono::Utc::now();
-        let expired_sessions: Vec<SessionId> = self.sessions
+        let expired_sessions: Vec<SessionId> = self
+            .sessions
             .values()
             .filter(|session| {
                 let idle_duration = now - session.last_activity;
@@ -226,7 +233,7 @@ impl SessionManager {
     pub fn get_statistics(&self) -> SessionStatistics {
         let total_sessions = self.sessions.len();
         let mut state_counts = HashMap::new();
-        
+
         for session in self.sessions.values() {
             *state_counts.entry(session.state).or_insert(0) += 1;
         }
@@ -262,10 +269,7 @@ impl std::fmt::Display for SessionId {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use golem_mcp_types::{
-        protocol::{McpImplementation},
-        transport::ConnectionState,
-    };
+    use golem_mcp_types::{protocol::McpImplementation, transport::ConnectionState};
     use std::collections::HashMap;
 
     #[test]
@@ -282,7 +286,7 @@ mod tests {
 
         // Create session
         let session_id = manager.create_session(connection_info);
-        let session = manager.get_session(session_id).unwrap();
+        let session = manager.get_session(session_id).expect("Session should exist after creation");
         assert_eq!(session.state, SessionState::Created);
 
         // Initialize session
@@ -302,13 +306,15 @@ mod tests {
             logging: None,
         };
 
-        manager.initialize_session(session_id, client_info, capabilities).unwrap();
-        let session = manager.get_session(session_id).unwrap();
+        manager
+            .initialize_session(session_id, client_info, capabilities)
+            .expect("Client capabilities should be valid");
+        let session = manager.get_session(session_id).expect("Session should exist");
         assert_eq!(session.state, SessionState::Initializing);
 
         // Mark ready
-        manager.mark_session_ready(session_id).unwrap();
-        let session = manager.get_session(session_id).unwrap();
+        manager.mark_session_ready(session_id).expect("Session should be markable as ready");
+        let session = manager.get_session(session_id).expect("Session should exist after marking ready");
         assert_eq!(session.state, SessionState::Ready);
     }
 
@@ -319,7 +325,7 @@ mod tests {
         let session_id = manager.create_session(connection_info);
 
         assert!(manager.get_session(session_id).is_some());
-        manager.close_session(session_id).await.unwrap();
+        manager.close_session(session_id).await.expect("Session should close successfully");
         assert!(manager.get_session(session_id).is_none());
     }
 }

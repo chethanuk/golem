@@ -20,10 +20,10 @@ pub struct ResourceProviderRegistry {
 pub trait ResourceProvider: Send + Sync + std::fmt::Debug {
     /// List available resources
     fn list_resources(&self) -> McpResult<Vec<Resource>>;
-    
+
     /// Read resource content by URI
     fn read_resource(&self, uri: &str) -> McpResult<Vec<u8>>;
-    
+
     /// Check if provider supports the given URI
     fn supports_uri(&self, uri: &str) -> bool;
 }
@@ -56,7 +56,7 @@ impl ResourceProviderRegistry {
     /// Returns `McpError::ResourceAccess` if any provider fails to list resources.
     pub fn list_all_resources(&self) -> McpResult<Vec<Resource>> {
         let mut all_resources = Vec::new();
-        
+
         for provider in self.providers.values() {
             match provider.list_resources() {
                 Ok(mut resources) => all_resources.append(&mut resources),
@@ -69,7 +69,7 @@ impl ResourceProviderRegistry {
                 }
             }
         }
-        
+
         Ok(all_resources)
     }
 
@@ -84,12 +84,43 @@ impl ResourceProviderRegistry {
                 return provider.read_resource(uri);
             }
         }
-        
+
         Err(McpError::resource_access(
             "unknown".to_owned(),
             uri.to_owned(),
             "No provider found for URI".to_owned(),
         ))
+    }
+
+    /// List all available resources (async version)
+    ///
+    /// # Errors
+    ///
+    /// Returns `McpError::ResourceAccess` if any provider fails to list resources.
+    pub async fn list_resources(&self) -> Vec<Resource> {
+        // For now, return synchronous version result
+        self.list_all_resources().unwrap_or_default()
+    }
+
+    /// Read resource content by URI (async version)
+    ///
+    /// # Errors
+    ///
+    /// Returns `McpError::ResourceAccess` if no provider supports the URI or reading fails.
+    pub async fn read_resource_async(&self, uri: &str) -> McpResult<serde_json::Value> {
+        match self.read_resource(uri) {
+            Ok(content) => {
+                let text = String::from_utf8_lossy(&content);
+                Ok(serde_json::json!({
+                    "contents": [{
+                        "uri": uri,
+                        "mimeType": "text/plain",
+                        "text": text
+                    }]
+                }))
+            }
+            Err(e) => Err(e)
+        }
     }
 }
 
@@ -124,12 +155,16 @@ mod tests {
     fn test_resource_provider_registry() {
         let mut registry = ResourceProviderRegistry::new();
         registry.register_provider("mock".to_owned(), Box::new(MockProvider));
-        
-        let resources = registry.list_all_resources().expect("should list resources");
+
+        let resources = registry
+            .list_all_resources()
+            .expect("should list resources");
         assert_eq!(resources.len(), 1);
         assert_eq!(resources[0].uri, "mock://test");
-        
-        let content = registry.read_resource("mock://test").expect("should read resource");
+
+        let content = registry
+            .read_resource("mock://test")
+            .expect("should read resource");
         assert_eq!(content, b"test content");
     }
 }

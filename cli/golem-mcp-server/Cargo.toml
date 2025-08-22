@@ -14,6 +14,11 @@ golem-mcp-types = { workspace = true }
 golem-mcp-tools = { workspace = true }
 golem-mcp-resources = { workspace = true }
 
+# MCP SDK
+rmcp = { version = "0.6.0", features = ["macros", "server", "schemars"] }
+rmcp-macros = { version = "0.6.0" }
+schemars = "1.0"
+
 # Async runtime and HTTP
 tokio = { workspace = true, features = ["full"] }
 axum = { workspace = true, features = ["http2", "ws"] }
@@ -54,10 +59,17 @@ rstest = "0.23.0"
 proptest = { workspace = true }
 axum-test = "16.3.0"
 wiremock = "0.6.2"
+tempfile = { workspace = true }
 
 [features]
 default = ["http-transport"]
 http-transport = []
+cli-integration = []
+
+# Temporarily commented out due to circular dependency
+# [dependencies.golem-cli]
+# path = "../golem-cli"
+# optional = true
 
 # Development lints
 [lints.rust]

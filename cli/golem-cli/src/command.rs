@@ -1854,9 +1854,6 @@ pub mod server {
             /// Address to bind the MCP server to, defaults to localhost
             #[clap(long, default_value = "localhost")]
             serve_host: String,
-            /// Enable verbose logging for MCP server
-            #[clap(long)]
-            verbose: bool,
         },
     }
 }

@@ -1,0 +1,366 @@
+//! Integration tests for resource provider functionality
+//!
+//! Tests the complete resource discovery and exposure flow,
+//! ensuring manifests are properly discovered and served as MCP resources.
+
+use golem_mcp_server::rmcp_handler::GolemMcpServer;
+use golem_mcp_resources::providers::ResourceProvider;
+use rmcp::{
+    handler::server::tool::Parameters,
+    model::{ListResourcesResult, ReadResourceRequest, ReadResourceResult, ResourceContents, ListResourcesRequest},
+    service::RequestContext,
+    ServerHandler, RoleServer,
+};
+use serde_json::json;
+use std::path::PathBuf;
+use tempfile::TempDir;
+use tokio::fs;
+use tracing::debug;
+
+/// Test resource discovery for component manifests
+#[tokio::test]
+async fn test_component_manifest_discovery() {
+    let _ = tracing_subscriber::fmt::try_init();
+    
+    // Create temporary directory with component manifests
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    // Create component manifest
+    let component_manifest = json!({
+        "componentName": "test-component",
+        "version": "1.0.0",
+        "exports": ["hello", "world"],
+        "metadata": {
+            "author": "test",
+            "description": "Test component"
+        }
+    });
+    
+    let manifest_dir = base_path.join("component");
+    fs::create_dir_all(&manifest_dir).await.unwrap();
+    
+    let manifest_path = manifest_dir.join("golem.json");
+    fs::write(&manifest_path, serde_json::to_string_pretty(&component_manifest).unwrap()).await.unwrap();
+    
+    debug!("Created component manifest at: {:?}", manifest_path);
+    
+    // Create server with temp directory
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    // List resources - should find the component manifest
+    let resources = server.list_resources(
+        None,
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    assert!(!resources.resources.is_empty(), "Should discover at least one resource");
+    
+    // Find component manifest resource
+    let component_resource = resources.resources.iter()
+        .find(|r| r.uri.as_str().contains("component") && r.uri.as_str().contains("golem.json"))
+        .expect("Should find component manifest resource");
+    
+    assert_eq!(component_resource.name, "component/golem.json");
+    assert_eq!(component_resource.mime_type.as_deref(), Some("application/json"));
+    assert!(component_resource.description.as_ref().map_or(false, |d| d.contains("Component manifest")));
+}
+
+/// Test reading component manifest resource content
+#[tokio::test]
+async fn test_component_manifest_content_reading() {
+    let _ = tracing_subscriber::fmt::try_init();
+    
+    // Create temporary directory with component manifest
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    let component_manifest = json!({
+        "componentName": "content-test-component",
+        "version": "2.0.0",
+        "exports": ["greet", "calculate"],
+        "metadata": {
+            "author": "integration-test",
+            "description": "Test component for content reading"
+        }
+    });
+    
+    let manifest_dir = base_path.join("my-component");
+    fs::create_dir_all(&manifest_dir).await.unwrap();
+    
+    let manifest_path = manifest_dir.join("golem.json");
+    fs::write(&manifest_path, serde_json::to_string_pretty(&component_manifest).unwrap()).await.unwrap();
+    
+    // Create server
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    // List resources to get URI
+    let resources = server.list_resources(
+        None,
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    let manifest_resource = resources.resources.iter()
+        .find(|r| r.name.contains("my-component") && r.name.contains("golem.json"))
+        .expect("Should find manifest resource");
+    
+    // Read resource content
+    let content_result = server.read_resource(
+        ReadResourceRequest {
+            uri: manifest_resource.uri.clone(),
+        },
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    // Verify content
+    if let ReadResourceResult { contents } = content_result {
+        assert_eq!(contents.len(), 1, "Should have one content item");
+        
+        if let ResourceContents::Text { text, .. } = &contents[0] {
+            let parsed: serde_json::Value = serde_json::from_str(text).expect("Content should be valid JSON");
+            assert_eq!(parsed["componentName"], "content-test-component");
+            assert_eq!(parsed["version"], "2.0.0");
+            assert_eq!(parsed["metadata"]["author"], "integration-test");
+        } else {
+            panic!("Expected text content");
+        }
+    }
+}
+
+/// Test multiple component manifests discovery
+#[tokio::test]
+async fn test_multiple_component_manifest_discovery() {
+    let _ = tracing_subscriber::fmt::try_init();
+    
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    // Create multiple component manifests
+    let components = vec![
+        ("component-a", "1.0.0"),
+        ("component-b", "2.1.0"),
+        ("component-c", "0.5.0"),
+    ];
+    
+    for (name, version) in &components {
+        let manifest = json!({
+            "componentName": name,
+            "version": version,
+            "exports": ["main"],
+            "metadata": {
+                "description": format!("Test component {}", name)
+            }
+        });
+        
+        let component_dir = base_path.join(name);
+        fs::create_dir_all(&component_dir).await.unwrap();
+        
+        let manifest_path = component_dir.join("golem.json");
+        fs::write(&manifest_path, serde_json::to_string_pretty(&manifest).unwrap()).await.unwrap();
+    }
+    
+    // Create server
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    // List resources
+    let resources = server.list_resources(
+        None,
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    // Should find all component manifests
+    let manifest_resources: Vec<_> = resources.resources.iter()
+        .filter(|r| r.name.contains("golem.json"))
+        .collect();
+    
+    assert_eq!(manifest_resources.len(), 3, "Should find all three component manifests");
+    
+    // Verify each component is represented
+    for (name, _) in &components {
+        assert!(manifest_resources.iter().any(|r| r.name.contains(name)), 
+                "Should find manifest for component {}", name);
+    }
+}
+
+/// Test nested component manifest discovery
+#[tokio::test]
+async fn test_nested_component_manifest_discovery() {
+    let _ = tracing_subscriber::fmt::try_init();
+    
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    // Create nested structure
+    let nested_structure = vec![
+        "services/auth/golem.json",
+        "services/payment/golem.json", 
+        "components/ui/golem.json",
+        "libs/shared/golem.json",
+    ];
+    
+    for manifest_path in &nested_structure {
+        let full_path = base_path.join(manifest_path);
+        let dir_path = full_path.parent().unwrap();
+        fs::create_dir_all(dir_path).await.unwrap();
+        
+        let manifest = json!({
+            "componentName": manifest_path.replace("/golem.json", "").replace("/", "-"),
+            "version": "1.0.0",
+            "exports": ["main"]
+        });
+        
+        fs::write(&full_path, serde_json::to_string_pretty(&manifest).unwrap()).await.unwrap();
+    }
+    
+    // Create server
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    // List resources
+    let resources = server.list_resources(
+        None,
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    // Should find all nested manifests
+    let manifest_count = resources.resources.iter()
+        .filter(|r| r.name.contains("golem.json"))
+        .count();
+    
+    assert_eq!(manifest_count, 4, "Should find all four nested manifests");
+    
+    // Verify nested paths are correct
+    assert!(resources.resources.iter().any(|r| r.name.contains("services/auth")));
+    assert!(resources.resources.iter().any(|r| r.name.contains("services/payment")));
+    assert!(resources.resources.iter().any(|r| r.name.contains("components/ui")));
+    assert!(resources.resources.iter().any(|r| r.name.contains("libs/shared")));
+}
+
+/// Test resource discovery with no manifests
+#[tokio::test]
+async fn test_resource_discovery_empty_directory() {
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    // Create some non-manifest files
+    fs::write(base_path.join("README.md"), "# Test Project").await.unwrap();
+    fs::write(base_path.join("Cargo.toml"), "[package]\nname = \"test\"").await.unwrap();
+    
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    let resources = server.list_resources(
+        None,
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    // Should not find any manifest resources
+    let manifest_count = resources.resources.iter()
+        .filter(|r| r.name.contains("golem.json"))
+        .count();
+    
+    assert_eq!(manifest_count, 0, "Should not find any manifests in empty project");
+}
+
+/// Test resource provider error handling for invalid manifests
+#[tokio::test]
+async fn test_resource_provider_invalid_manifest_handling() {
+    let _ = tracing_subscriber::fmt::try_init();
+    
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    // Create invalid JSON manifest
+    let invalid_manifest_dir = base_path.join("invalid-component");
+    fs::create_dir_all(&invalid_manifest_dir).await.unwrap();
+    
+    let invalid_manifest_path = invalid_manifest_dir.join("golem.json");
+    fs::write(&invalid_manifest_path, "{ invalid json }").await.unwrap();
+    
+    // Create valid manifest for comparison
+    let valid_manifest_dir = base_path.join("valid-component");
+    fs::create_dir_all(&valid_manifest_dir).await.unwrap();
+    
+    let valid_manifest_path = valid_manifest_dir.join("golem.json");
+    let valid_manifest = json!({
+        "componentName": "valid-component",
+        "version": "1.0.0",
+        "exports": ["test"]
+    });
+    fs::write(&valid_manifest_path, serde_json::to_string_pretty(&valid_manifest).unwrap()).await.unwrap();
+    
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    // List resources - should still work and find valid manifest
+    let resources = server.list_resources(
+        None,
+        RequestContext::new(RoleServer),
+    ).await.unwrap();
+    
+    // Should find the valid manifest but gracefully handle the invalid one
+    let valid_manifests: Vec<_> = resources.resources.iter()
+        .filter(|r| r.name.contains("valid-component") && r.name.contains("golem.json"))
+        .collect();
+    
+    assert_eq!(valid_manifests.len(), 1, "Should find the valid manifest");
+    
+    // Try to read the invalid manifest - should handle gracefully
+    if let Some(invalid_resource) = resources.resources.iter()
+        .find(|r| r.name.contains("invalid-component") && r.name.contains("golem.json")) {
+        
+        let read_result = server.read_resource(
+            ReadResourceRequest {
+                uri: invalid_resource.uri.clone(),
+            },
+            RequestContext::new(RoleServer),
+        ).await;
+        
+        // Should either succeed (raw content) or fail gracefully
+        if let Ok(content) = read_result {
+            // If it succeeds, it should return the raw content
+            assert!(!content.contents.is_empty());
+        }
+        // If it fails, that's also acceptable for invalid JSON
+    }
+}
+
+/// Test resource caching and performance
+#[tokio::test] 
+async fn test_resource_provider_performance() {
+    let temp_dir = TempDir::new().unwrap();
+    let base_path = temp_dir.path().to_path_buf();
+    
+    // Create many component manifests
+    for i in 0..50 {
+        let manifest = json!({
+            "componentName": format!("component-{}", i),
+            "version": "1.0.0",
+            "exports": ["main"]
+        });
+        
+        let component_dir = base_path.join(format!("component-{}", i));
+        fs::create_dir_all(&component_dir).await.unwrap();
+        
+        let manifest_path = component_dir.join("golem.json");
+        fs::write(&manifest_path, serde_json::to_string_pretty(&manifest).unwrap()).await.unwrap();
+    }
+    
+    let server = GolemMcpServer::with_base_dir(base_path);
+    
+    // Measure discovery performance
+    let start = std::time::Instant::now();
+    
+    for _ in 0..10 {
+        let resources = server.list_resources(
+            None,
+            RequestContext::new(RoleServer),
+        ).await.unwrap();
+        
+        assert_eq!(resources.resources.len(), 50, "Should find all 50 manifests");
+    }
+    
+    let duration = start.elapsed();
+    
+    // Should complete reasonably quickly (adjust threshold as needed)
+    assert!(duration.as_millis() < 1000, "Resource discovery should complete within 1 second for 50 manifests, took: {:?}", duration);
+    
+    debug!("Resource discovery performance: {:?} for 10 iterations with 50 manifests", duration);
+}

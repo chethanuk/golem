@@ -4,7 +4,9 @@
 //! with comprehensive error handling and validation.
 
 use crate::error::{McpError, McpResult};
-use crate::protocol::{JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcErrorResponse, JsonRpcNotification};
+use crate::protocol::{
+    JsonRpcErrorResponse, JsonRpcMessage, JsonRpcNotification, JsonRpcRequest, JsonRpcResponse,
+};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -77,7 +79,10 @@ impl MessageSerializer {
         serde_json::from_value(value.clone()).map_err(|e| {
             McpError::serialization(
                 "deserialize_value".to_owned(),
-                format!("Failed to deserialize value to {}: {e}", std::any::type_name::<T>()),
+                format!(
+                    "Failed to deserialize value to {}: {e}",
+                    std::any::type_name::<T>()
+                ),
             )
         })
     }
@@ -90,10 +95,7 @@ impl MessageSerializer {
     pub fn validate_json_rpc(json: &str) -> McpResult<()> {
         // First, ensure it's valid JSON
         let value: serde_json::Value = serde_json::from_str(json).map_err(|e| {
-            McpError::serialization(
-                "validate_json".to_owned(),
-                format!("Invalid JSON: {e}"),
-            )
+            McpError::serialization("validate_json".to_owned(), format!("Invalid JSON: {e}"))
         })?;
 
         // Check that it's an object
@@ -149,18 +151,18 @@ impl MessageSerializer {
                     "Response must have 'id' field".to_owned(),
                 ));
             }
-            
+
             // Must have either result or error, but not both
             let has_result = obj.contains_key("result");
             let has_error = obj.contains_key("error");
-            
+
             if has_result && has_error {
                 return Err(McpError::serialization(
                     "validate_response".to_owned(),
                     "Response cannot have both 'result' and 'error' fields".to_owned(),
                 ));
             }
-            
+
             if !has_result && !has_error {
                 return Err(McpError::serialization(
                     "validate_response".to_owned(),
@@ -266,7 +268,9 @@ impl MessageBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::{JsonRpcId, InitializeParams, McpCapabilities, McpClientInfo, McpImplementation};
+    use crate::protocol::{
+        InitializeParams, JsonRpcId, McpCapabilities, McpClientInfo, McpImplementation,
+    };
     use std::collections::HashMap;
 
     #[test]
@@ -277,10 +281,10 @@ mod tests {
             Some(serde_json::json!({"test": "value"})),
         ));
 
-        let json = MessageSerializer::serialize_message(&original_message)
-            .expect("should serialize");
-        let deserialized = MessageSerializer::deserialize_message(&json)
-            .expect("should deserialize");
+        let json =
+            MessageSerializer::serialize_message(&original_message).expect("should serialize");
+        let deserialized =
+            MessageSerializer::deserialize_message(&json).expect("should deserialize");
 
         assert_eq!(original_message, deserialized);
     }
@@ -305,14 +309,15 @@ mod tests {
 
     #[test]
     fn test_json_rpc_validation_response_with_both_result_and_error() {
-        let json = r#"{"jsonrpc":"2.0","id":"1","result":"ok","error":{"code":-1,"message":"fail"}}"#;
+        let json =
+            r#"{"jsonrpc":"2.0","id":"1","result":"ok","error":{"code":-1,"message":"fail"}}"#;
         assert!(MessageSerializer::validate_json_rpc(json).is_err());
     }
 
     #[test]
     fn test_message_builder_request() {
         let message = MessageBuilder::request("test-id", "initialize", None);
-        
+
         if let JsonRpcMessage::Request(req) = message {
             assert_eq!(req.id, JsonRpcId::String("test-id".to_owned()));
             assert_eq!(req.method, "initialize");

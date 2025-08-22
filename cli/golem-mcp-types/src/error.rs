@@ -303,7 +303,12 @@ mod tests {
         assert_eq!(McpError::invalid_request("test".to_owned()).code(), -32_600);
         assert_eq!(McpError::authorization("test".to_owned()).code(), -32_601);
         assert_eq!(
-            McpError::resource_access("manifest".to_owned(), "test".to_owned(), "not found".to_owned()).code(),
+            McpError::resource_access(
+                "manifest".to_owned(),
+                "test".to_owned(),
+                "not found".to_owned()
+            )
+            .code(),
             -32_602
         );
     }

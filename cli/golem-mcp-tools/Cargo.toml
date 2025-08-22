@@ -11,9 +11,11 @@ homepage = "https://golem.cloud"
 [dependencies]
 # Internal dependencies
 golem-mcp-types = { workspace = true }
+golem-templates = { workspace = true }
 
 # Async runtime
 tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
 
 # Serialization
 serde = { workspace = true }

@@ -3,9 +3,7 @@
 //! Provides the main server implementation that coordinates all MCP functionality.
 
 use crate::{
-    config::McpServerConfig,
-    handlers::MessageHandlerImpl,
-    http::HttpTransport,
+    config::McpServerConfig, handlers::MessageHandlerImpl, http::HttpTransport,
     session::SessionManager,
 };
 use golem_mcp_types::{
@@ -91,9 +89,7 @@ impl McpServer {
     pub fn capabilities(&self) -> McpCapabilities {
         // This would be built based on available tools and resources
         McpCapabilities {
-            tools: Some(golem_mcp_types::protocol::ToolsCapability {
-                list_changed: true,
-            }),
+            tools: Some(golem_mcp_types::protocol::ToolsCapability { list_changed: true }),
             resources: Some(golem_mcp_types::protocol::ResourcesCapability {
                 subscribe: false,
                 list_changed: true,
@@ -113,7 +109,7 @@ impl McpServer {
     /// Gracefully shutdown the server
     pub async fn shutdown(&self) -> McpResult<()> {
         info!("Shutting down MCP server");
-        
+
         // Close all active sessions
         {
             let mut session_manager = self.session_manager.write().await;

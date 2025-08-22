@@ -7,12 +7,11 @@ use crate::config::McpServerConfig;
 use golem_mcp_types::{
     error::{McpError, McpResult},
     protocol::{
-        JsonRpcMessage, JsonRpcRequest, InitializeParams, InitializeResult,
-        McpCapabilities, ToolsCapability, ResourcesCapability, LoggingCapability, LogLevel,
-        Tool, Resource,
+        InitializeParams, InitializeResult, JsonRpcMessage, JsonRpcRequest, LogLevel,
+        LoggingCapability, McpCapabilities, ResourcesCapability, ToolsCapability,
     },
-    transport::MessageHandler,
     serialization::MessageBuilder,
+    transport::MessageHandler,
 };
 use std::sync::Arc;
 use tracing::{debug, error, instrument};
@@ -22,9 +21,9 @@ pub struct MessageHandlerImpl {
     /// Server configuration
     config: McpServerConfig,
     /// Tool registry
-    _tool_registry: Arc<golem_mcp_tools::ToolRegistry>,
+    tool_registry: Arc<golem_mcp_tools::ToolRegistry>,
     /// Resource provider registry
-    _resource_registry: Arc<golem_mcp_resources::ResourceProviderRegistry>,
+    resource_registry: Arc<golem_mcp_resources::ResourceProviderRegistry>,
 }
 
 impl MessageHandlerImpl {
@@ -39,8 +38,8 @@ impl MessageHandlerImpl {
 
         Ok(Self {
             config,
-            _tool_registry: tool_registry,
-            _resource_registry: resource_registry,
+            tool_registry,
+            resource_registry,
         })
     }
 }
@@ -120,7 +119,10 @@ impl MessageHandlerImpl {
             ));
         };
 
-        debug!("Initialize request from client: {}", params.client_info.name);
+        debug!(
+            "Initialize request from client: {}",
+            params.client_info.name
+        );
 
         // Validate protocol version
         if params.protocol_version != golem_mcp_types::protocol::MCP_VERSION {
@@ -136,9 +138,7 @@ impl MessageHandlerImpl {
         let result = InitializeResult {
             protocol_version: golem_mcp_types::protocol::MCP_VERSION.to_owned(),
             capabilities: McpCapabilities {
-                tools: Some(ToolsCapability {
-                    list_changed: true,
-                }),
+                tools: Some(ToolsCapability { list_changed: true }),
                 resources: Some(ResourcesCapability {
                     subscribe: false,
                     list_changed: true,
@@ -160,59 +160,80 @@ impl MessageHandlerImpl {
             ),
         };
 
-        MessageBuilder::response_with_result(request.id, &result)
-            .map_err(|e| {
-                error!("Failed to serialize initialize result: {}", e);
-                e
-            })
+        MessageBuilder::response_with_result(request.id, &result).map_err(|e| {
+            error!("Failed to serialize initialize result: {}", e);
+            e
+        })
     }
 
     /// Handle tools/list request
     async fn handle_tools_list(&self, request: JsonRpcRequest) -> McpResult<JsonRpcMessage> {
         debug!("Listing available tools");
-        
-        // This would integrate with the tool registry
-        let tools: Vec<Tool> = vec![]; // Placeholder - will be populated by tool registry
-        
+
+        // Get tools from registry
+        let tools = self.tool_registry.list_tools();
+
         MessageBuilder::response_with_result(request.id, &tools)
     }
 
     /// Handle tools/call request
     async fn handle_tools_call(&self, request: JsonRpcRequest) -> McpResult<JsonRpcMessage> {
         debug!("Executing tool call");
-        
-        // This would parse the tool call parameters and execute the tool
-        let result = serde_json::json!({
+
+        // Parse tool call parameters
+        let params: serde_json::Value = request.params.unwrap_or_default();
+        let tool_name = params["name"].as_str().unwrap_or("unknown");
+        let arguments = &params["arguments"];
+
+        debug!("Tool call: {} with args: {}", tool_name, arguments);
+
+        // For now, return a placeholder response
+        // TODO: In Phase 4, this will call the rmcp server's tool methods
+        let execution_result = serde_json::json!({
             "success": true,
-            "result": "Tool execution placeholder"
+            "result": {
+                "tool": tool_name,
+                "status": "executed",
+                "message": format!("Tool {} would be executed with arguments", tool_name),
+                "arguments": arguments
+            }
         });
-        
-        MessageBuilder::response_with_result(request.id, &result)
+
+        MessageBuilder::response_with_result(request.id, &execution_result)
     }
 
     /// Handle resources/list request
     async fn handle_resources_list(&self, request: JsonRpcRequest) -> McpResult<JsonRpcMessage> {
         debug!("Listing available resources");
-        
-        // This would integrate with the resource provider registry
-        let resources: Vec<Resource> = vec![]; // Placeholder - will be populated by resource provider registry
-        
+
+        // Get resources from the resource provider registry
+        let resources = self.resource_registry.list_resources().await;
+
         MessageBuilder::response_with_result(request.id, &resources)
     }
 
     /// Handle resources/read request
     async fn handle_resources_read(&self, request: JsonRpcRequest) -> McpResult<JsonRpcMessage> {
         debug!("Reading resource");
-        
-        // This would read the requested resource
-        let content = serde_json::json!({
-            "contents": [{
-                "uri": "placeholder",
-                "mimeType": "text/plain",
-                "text": "Resource content placeholder"
-            }]
-        });
-        
+
+        // Parse resource URI from request
+        let params: serde_json::Value = request.params.unwrap_or_default();
+        let uri = params["uri"].as_str().unwrap_or("unknown");
+
+        debug!("Reading resource: {}", uri);
+
+        // Read the resource via resource provider registry
+        let content = match self.resource_registry.read_resource_async(uri).await {
+            Ok(resource_content) => resource_content,
+            Err(e) => serde_json::json!({
+                "contents": [{
+                    "uri": uri,
+                    "mimeType": "text/plain",
+                    "text": format!("Error reading resource: {}", e)
+                }]
+            })
+        };
+
         MessageBuilder::response_with_result(request.id, &content)
     }
 }

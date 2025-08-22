@@ -3,11 +3,14 @@
 //! Provides comprehensive configuration management for the MCP server,
 //! supporting environment variables, configuration files, and CLI arguments.
 
-use figment::{Figment, providers::{Format, Toml, Env, Serialized}};
+use figment::{
+    providers::{Env, Format, Serialized, Toml},
+    Figment,
+};
 use golem_mcp_types::{
     error::{McpError, McpResult},
+    protocol::{LogLevel, McpImplementation, McpServerInfo},
     transport::HttpTransportConfig,
-    protocol::{McpServerInfo, McpImplementation, LogLevel},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -98,8 +101,16 @@ impl Default for McpServerConfig {
                     version: env!("CARGO_PKG_VERSION").to_owned(),
                     metadata: {
                         let mut map = HashMap::new();
-                        map.insert("repository".to_owned(), serde_json::Value::String("https://github.com/golemcloud/golem".to_owned()));
-                        map.insert("homepage".to_owned(), serde_json::Value::String("https://golem.cloud".to_owned()));
+                        map.insert(
+                            "repository".to_owned(),
+                            serde_json::Value::String(
+                                "https://github.com/golemcloud/golem".to_owned(),
+                            ),
+                        );
+                        map.insert(
+                            "homepage".to_owned(),
+                            serde_json::Value::String("https://golem.cloud".to_owned()),
+                        );
                         map
                     },
                 }),
@@ -278,7 +289,10 @@ impl McpServerConfig {
             } else {
                 Err(McpError::configuration(
                     "golem.cli_path".to_owned(),
-                    format!("Configured Golem CLI path does not exist: {}", path.display()),
+                    format!(
+                        "Configured Golem CLI path does not exist: {}",
+                        path.display()
+                    ),
                 ))
             }
         } else {
@@ -314,8 +328,8 @@ impl McpServerConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_default_config_validation() {
@@ -328,14 +342,16 @@ mod tests {
         let mut config = McpServerConfig::default();
         config.security.enable_auth = true;
         config.security.auth_tokens.clear();
-        
+
         assert!(config.validate().is_err());
     }
 
     #[test]
     fn test_config_from_toml_file() {
         let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
-        writeln!(temp_file, r#"
+        writeln!(
+            temp_file,
+            r#"
 [server_info]
 name = "test-server"
 version = "1.0.0"
@@ -345,13 +361,15 @@ host = "127.0.0.1"
 port = 8080
 
 [logging]
-level = "Debug"
+level = "debug"
 json = true
-        "#).expect("Failed to write config");
+        "#
+        )
+        .expect("Failed to write config");
 
-        let config = McpServerConfig::from_sources(Some(temp_file.path()))
-            .expect("Should load config");
-        
+        let config =
+            McpServerConfig::from_sources(Some(&temp_file.path().to_path_buf())).expect("Should load config");
+
         assert_eq!(config.server_info.name, "test-server");
         assert_eq!(config.http.port, 8080);
         assert_eq!(config.logging.level, LogLevel::Debug);
@@ -376,7 +394,7 @@ json = true
         let mut config = McpServerConfig::default();
         config.http.host = "0.0.0.0".to_owned();
         config.http.port = 3000;
-        
+
         assert_eq!(config.bind_address(), "0.0.0.0:3000");
     }
 }

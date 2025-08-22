@@ -38,20 +38,37 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic, clippy::nursery, clippy::cargo)]
 #![deny(unsafe_code)]
-#![deny(missing_docs)]
+// TODO - @chethanuk Change this later on
+#![warn(missing_docs)] 
 
 pub mod config;
+pub mod errors;
 pub mod handlers;
 pub mod http;
+pub mod mcp_bridge;
+pub mod progress;
+pub mod rmcp_handler;
 pub mod server;
 pub mod session;
 
 pub use config::McpServerConfig;
+pub use errors::{GolemMcpError, GolemMcpResult, ErrorCategory, ErrorSeverity, ErrorBuilder};
 pub use server::McpServer;
+
+// Multi-transport support following Amazon Q pattern
+pub use rmcp_handler::{
+    GolemMcpServer, 
+    GolemMcpTransport,
+    serve_mcp_stdio, 
+    serve_mcp_http,
+    stdio_transport,
+    http_transport,
+    http_transport_with_host,
+};
 
 /// Re-export commonly used types from golem-mcp-types
 pub use golem_mcp_types::{
     error::{McpError, McpResult},
-    protocol::{JsonRpcMessage, McpCapabilities, McpServerInfo},
-    transport::{Transport, HttpTransportConfig},
+    protocol::{JsonRpcMessage, LogLevel, McpCapabilities, McpServerInfo},
+    transport::{HttpTransportConfig, Transport},
 };

@@ -6,7 +6,7 @@
 use crate::error::{McpError, McpResult};
 use crate::protocol::JsonRpcMessage;
 use async_trait::async_trait;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Transport layer abstraction for MCP message handling
@@ -194,7 +194,7 @@ pub trait MessageHandler: Send + Sync {
     /// # Errors
     ///
     /// Returns appropriate `McpError` variants based on the specific handling failure.
-    async fn handle_message(&self, message: JsonRpcMessage) -> McpResult<Option<JsonRpcMessage>>;
+    fn handle_message(&self, message: JsonRpcMessage) -> impl std::future::Future<Output = McpResult<Option<JsonRpcMessage>>> + Send;
 }
 
 /// Connection state for tracking transport connections
