@@ -1,7 +1,7 @@
 //! Progress Streaming Demo
 //!
 //! This example demonstrates the progress streaming implementation for long-running
-//! Golem operations, following the Amazon Q pattern from Compare.MD.
+//! Golem operations, providing real-time updates to keep users informed.
 //!
 //! # Features Demonstrated
 //!
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
 
     info!("🚀 Starting Progress Streaming Demo");
-    info!("This demo shows Amazon Q style progress streaming for Golem MCP Server");
+    info!("This demo shows real-time progress streaming for Golem MCP Server operations");
 
     // Create a Golem MCP server
     let server = GolemMcpServer::new();
@@ -156,7 +156,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n🏁 Progress Streaming Demo completed successfully!");
     info!("Key features demonstrated:");
     info!("  ✅ Type-safe progress tokens with newtypes");
-    info!("  ✅ Amazon Q timeout configuration (120s default)");
+    info!("  ✅ Timeout configuration optimized for different operation types (120s default)");
     info!("  ✅ Progress notifications via ProgressNotificationParam");
     info!("  ✅ Zero-cost abstractions for quick operations");
     info!("  ✅ Comprehensive error handling with structured types");

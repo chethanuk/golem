@@ -45,17 +45,16 @@ pub mod config;
 pub mod errors;
 pub mod handlers;
 pub mod http;
-pub mod mcp_bridge;
 pub mod progress;
 pub mod rmcp_handler;
 pub mod server;
 pub mod session;
 
 pub use config::McpServerConfig;
-pub use errors::{GolemMcpError, GolemMcpResult, ErrorCategory, ErrorSeverity, ErrorBuilder};
+pub use errors::{GolemMcpError, GolemMcpResult, ErrorCategory, ErrorSeverity, ErrorBuilder, TransportType};
 pub use server::McpServer;
 
-// Multi-transport support following Amazon Q pattern
+// Multi-transport support for flexible deployment options
 pub use rmcp_handler::{
     GolemMcpServer, 
     GolemMcpTransport,

@@ -1,7 +1,7 @@
 //! Progress streaming implementation for long-running Golem operations
 //!
-//! Implements Amazon Q style progress streaming with timeout handling,
-//! following the pattern specified in Compare.MD lines 313-366.
+//! Provides real-time progress updates with timeout handling to keep users
+//! informed during long-running operations like builds and deployments.
 //!
 //! # Architecture
 //!
@@ -93,7 +93,7 @@ impl ProgressStreamError {
 /// Type alias for progress streaming results
 pub type ProgressResult<T> = Result<T, ProgressStreamError>;
 
-/// Timeout configuration following Amazon Q pattern from Compare.MD lines 297-305
+/// Timeout configuration for different operation phases\n/// Different phases require different timeouts based on expected duration
 #[derive(Debug, Clone)]
 pub struct TimeoutConfig {
     /// Initialization timeout (5-10 seconds)
@@ -280,7 +280,7 @@ impl ProgressSender {
 }
 
 /// Execute a long-running operation with progress streaming
-/// Following Amazon Q pattern from Compare.MD lines 318-348
+/// Execute an async operation with progress tracking and timeout\n/// Wraps operations to provide consistent timeout and progress handling
 pub async fn execute_with_progress<F, T, E>(
     operation: F,
     progress_sender: ProgressSender,

@@ -38,3 +38,10 @@ mcp-server-*.log
 
 PROGRESS_STREAMING.md
 Requirements-Analysis.MD
+cli/golem-mcp-server/server.log
+cli/golem-mcp-server/server2.log
+cli/golem-mcp-server/server3.log
+
+t3emp
+cli/golem-mcp-server/simple_test.py
+cli/golem-mcp-server/test_tools_list.py

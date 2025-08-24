@@ -1,7 +1,7 @@
 //! Integration tests for progress streaming implementation
 //!
 //! Tests the complete progress streaming flow from tool execution to
-//! progress notification delivery, following Amazon Q patterns.
+//! progress notification delivery with timeout handling and error recovery.
 
 use golem_mcp_server::rmcp_handler::{
     GolemMcpServer, ComponentOperation, WorkerOperation,

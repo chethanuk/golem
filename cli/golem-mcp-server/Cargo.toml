@@ -8,6 +8,10 @@ description = "Model Context Protocol (MCP) server implementation for Golem CLI"
 repository = "https://github.com/golemcloud/golem"
 homepage = "https://golem.cloud"
 
+[[bin]]
+name = "golem-mcp-server"
+path = "src/main.rs"
+
 [dependencies]
 # Internal dependencies
 golem-mcp-types = { workspace = true }

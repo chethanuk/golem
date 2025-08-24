@@ -7,7 +7,7 @@ set -e
 echo "🔍 Quick MCP Server Verification"
 echo "================================"
 
-BASE_URL="http://localhost:8088"
+BASE_URL="http://localhost:1234"
 
 # Test 1: Health Check
 echo "1. Testing health endpoint..."

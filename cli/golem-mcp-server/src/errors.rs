@@ -1,7 +1,7 @@
 //! Comprehensive error handling system for Golem MCP Server
 //!
-//! Implements structured error hierarchy following Amazon Q patterns with
-//! observability, categorization, and recovery mechanisms.
+//! Implements structured error hierarchy with detailed categorization,
+//! observability support, and recovery mechanisms for robust error handling.
 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt};

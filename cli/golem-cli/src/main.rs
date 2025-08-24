@@ -20,6 +20,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ServerCommandError {
+    #[cfg(feature = "server-commands")]
     #[error("MCP server failed to start: {0}")]
     McpStartFailed(#[from] golem_mcp_server::McpError),
     #[error("Server configuration error: {message}")]

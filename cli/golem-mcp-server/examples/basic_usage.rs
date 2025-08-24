@@ -1,7 +1,7 @@
 //! Basic Usage Example for Golem MCP Server
 //!
 //! This example demonstrates the minimal setup required to get a Golem MCP server
-//! running with stdio transport, following production patterns from Amazon Q Developer CLI.
+//! running with stdio transport, using best practices for MCP server implementation.
 //!
 //! # Usage
 //!
@@ -50,23 +50,20 @@ fn init_logging() {
 ///   -d '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}'
 /// ```
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
     
     info!("🚀 Starting Golem MCP Server - Basic Usage Example");
     info!("📋 This example demonstrates minimal server setup with stdio transport");
     
-    // Create server instance with default configuration
-    let server = GolemMcpServer::new();
-    
-    info!("✅ Server created successfully");
+    info!("✅ Server will be created and configured automatically");
     info!("🔧 Golem CLI tools are automatically discovered and exposed");
     info!("📄 Manifest resources will be available if found in current directory");
     
     // Start server with stdio transport (Claude Desktop compatible)
     info!("🎯 Starting stdio transport for Claude Desktop integration...");
     
-    match serve_mcp_stdio(server).await {
+    match serve_mcp_stdio().await {
         Ok(()) => {
             info!("✅ Server terminated gracefully");
         }

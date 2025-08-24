@@ -1,8 +1,8 @@
 //! Direct execution of Golem CLI commands
 //!
 //! This module provides simplified tool execution for MCP protocol.
-//! Following industry patterns (Amazon Q, Codex, rmcp), we avoid trait abstractions
-//! and implement direct execution. The actual CLI handler integration will happen
+//! Using direct execution pattern for simplicity and performance - avoids unnecessary
+//! abstraction layers. The actual CLI handler integration will happen
 //! in the golem-mcp-server crate using rmcp's #[tool_router] macro.
 
 use golem_mcp_types::{
@@ -77,7 +77,7 @@ impl DirectExecutor {
         let start_time = std::time::Instant::now();
 
         let result = match context.tool_name.as_str() {
-            // Domain-based tools following Amazon Q pattern
+            // Domain-based tools organized by functional area
             "golem_component_management" => self.execute_component_management(&context.parameters).await,
             "golem_worker_management" => self.execute_worker_management(&context.parameters).await,
             "golem_application_management" => self.execute_application_management(&context.parameters).await,

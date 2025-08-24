@@ -1,8 +1,8 @@
 //! Tool registry for MCP tool schema definitions
 //!
-//! Following industry patterns (Amazon Q, Codex, rmcp), this registry only defines
-//! tool schemas and metadata. Execution happens in the MCP server using rmcp's
-//! #[tool] macro. Tools are discovered FROM servers, not created locally.
+//! This registry defines tool schemas and metadata for MCP protocol.
+//! Execution happens in the MCP server using rmcp's #[tool] macro.
+//! Tools are discovered FROM servers, not created locally for proper separation.
 
 use golem_mcp_types::{
     error::{McpError, McpResult},
@@ -61,8 +61,8 @@ impl ToolRegistry {
 
     /// Register the 4 domain-based tool schemas
     /// 
-    /// Following the industry pattern, we define 4 domain tools instead of 25+ individual ones.
-    /// This matches Amazon Q's approach of grouping related operations.
+    /// We define domain-based tools instead of individual operations for better organization.
+    /// This groups related operations together for easier discovery and management.
     fn register_domain_tools(&mut self) {
         debug!("Registering domain-based tool schemas");
         
