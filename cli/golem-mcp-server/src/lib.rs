@@ -41,12 +41,17 @@
 // TODO - @chethanuk Change this later on
 #![warn(missing_docs)] 
 
+pub mod api_client;
+pub mod api_client_extensions;
+pub mod auth;
+pub mod client_manager;
 pub mod config;
 pub mod errors;
 pub mod handlers;
 pub mod http;
 pub mod progress;
-pub mod rmcp_handler;
+// V1 removed - using V2 only
+pub mod rmcp_handler_v2;
 pub mod server;
 pub mod session;
 
@@ -54,20 +59,5 @@ pub use config::McpServerConfig;
 pub use errors::{GolemMcpError, GolemMcpResult, ErrorCategory, ErrorSeverity, ErrorBuilder, TransportType};
 pub use server::McpServer;
 
-// Multi-transport support for flexible deployment options
-pub use rmcp_handler::{
-    GolemMcpServer, 
-    GolemMcpTransport,
-    serve_mcp_stdio, 
-    serve_mcp_http,
-    stdio_transport,
-    http_transport,
-    http_transport_with_host,
-};
-
-/// Re-export commonly used types from golem-mcp-types
-pub use golem_mcp_types::{
-    error::{McpError, McpResult},
-    protocol::{JsonRpcMessage, LogLevel, McpCapabilities, McpServerInfo},
-    transport::{HttpTransportConfig, Transport},
-};
+// Export V2 as the primary implementation
+pub use rmcp_handler_v2::{GolemMcpServerV2, GolemMcpTransport};

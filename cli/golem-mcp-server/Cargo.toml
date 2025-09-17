@@ -17,9 +17,12 @@ path = "src/main.rs"
 golem-mcp-types = { workspace = true }
 golem-mcp-tools = { workspace = true }
 golem-mcp-resources = { workspace = true }
+golem-client = { workspace = true }
+golem-common = { workspace = true }
+golem-wasm-rpc = { workspace = true }
 
 # MCP SDK
-rmcp = { version = "0.6.0", features = ["macros", "server", "schemars"] }
+rmcp = { version = "0.6.0", features = ["macros", "server", "schemars", "transport-io"] }
 rmcp-macros = { version = "0.6.0" }
 schemars = "1.0"
 
@@ -39,11 +42,14 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 
-# Async traits (required for trait implementations)
+# Async traits (required for ServerHandler trait implementation)
 async-trait = { workspace = true }
 
 # Process and system utilities
 which = "6.0.3"
+
+# HTTP client for API calls
+reqwest = { workspace = true }
 
 # Utilities
 uuid = { workspace = true }
@@ -51,6 +57,8 @@ chrono = { workspace = true }
 url = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
+dirs = "5.0"
+toml = "0.8"
 
 # Configuration
 clap = { workspace = true, features = ["derive", "env"] }

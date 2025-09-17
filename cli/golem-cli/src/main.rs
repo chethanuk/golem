@@ -73,10 +73,51 @@ mod hooks {
                     
                     Ok(())
                 }
-                _ => {
-                    // Handle other server commands (Run, Clean) - delegate to default behavior
-                    eprintln!("Server command not implemented in MCP context");
+                ServerSubcommand::Run { args } => {
+                    // Import necessary components from golem crate for server run
+                    use golem::launch::{LaunchArgs, launch_golem_services};
+                    use std::path::PathBuf;
+                    
+                    // Get the data directory
+                    let data_dir = match &args.data_dir {
+                        Some(data_dir) => data_dir.to_path_buf(),
+                        None => dirs::data_local_dir()
+                            .ok_or_else(|| anyhow::anyhow!("Failed to get data local dir"))?
+                            .join("golem"),
+                    };
+                    
+                    // Clean the data directory if requested
+                    if args.clean && tokio::fs::metadata(&data_dir).await.is_ok() {
+                        tokio::fs::remove_dir_all(&data_dir)
+                            .await
+                            .map_err(|err| anyhow::anyhow!("Failed cleaning data dir ({}): {}", data_dir.display(), err))?;
+                    }
+                    
+                    println!("Starting Golem server with data directory: {}", data_dir.display());
+                    
+                    // Launch the Golem services
+                    let mut join_set = launch_golem_services(&LaunchArgs {
+                        router_addr: args.router_addr().to_string(),
+                        router_port: args.router_port(),
+                        custom_request_port: args.custom_request_port(),
+                        data_dir,
+                    }).await?;
+                    
+                    // Wait for all services to complete
+                    while let Some(res) = join_set.join_next().await {
+                        res??;
+                    }
+                    
                     Ok(())
+                }
+                ServerSubcommand::Clean => {
+                    let data_dir = dirs::data_local_dir()
+                        .ok_or_else(|| anyhow::anyhow!("Failed to get data local dir"))?
+                        .join("golem");
+                    
+                    tokio::fs::remove_dir_all(&data_dir)
+                        .await
+                        .map_err(|err| anyhow::anyhow!("Failed cleaning data dir ({}): {}", data_dir.display(), err))
                 }
             }
         }

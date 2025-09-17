@@ -1,78 +1,86 @@
-# Golem CLI MCP Server
+# Golem MCP Server V2
 
-A production-ready Model Context Protocol (MCP) server implementation that exposes Golem CLI functionality to AI agents like Claude Code.
+A Model Context Protocol (MCP) server for Golem Cloud, providing direct API access to Golem components and workers without subprocess execution.
 
 ## Overview
 
-The Golem MCP Server enables AI agents to interact with Golem Cloud infrastructure through the standardized MCP protocol. It exposes all CLI commands as MCP tools and provides access to project manifests and configurations as MCP resources.
+The Golem MCP Server V2 is a complete rewrite that eliminates subprocess execution in favor of direct API integration. This provides better performance, type safety, and reliability while maintaining full compatibility with the MCP protocol.
 
 ## Features
 
-- ✅ **Complete MCP 2025-06-18 specification compliance**
-- ✅ **HTTP transport** with RESTful endpoints
-- ✅ **All Golem CLI commands** exposed as MCP tools
-- ✅ **Manifest and resource discovery**
-- ✅ **Real-time progress feedback**
-- ✅ **Comprehensive error handling**
-- ✅ **Production-ready security**
+### ✅ V2 Implementation Highlights
+- **100% Direct API Integration** - No subprocess or CLI execution
+- **13 MCP Tools** - Granular control over Golem operations  
+- **Type-Safe Operations** - Strongly typed parameters and responses
+- **Async/Await** - Non-blocking operations throughout
+- **JSON Responses** - Standardized output format
+
+### 🛠 Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_components` | List all deployed components |
+| `deploy_component` | Deploy new component from WASM |
+| `update_component` | Update existing component |
+| `delete_component` | Remove component |
+| `list_workers` | List workers for a component |
+| `create_worker` | Create new worker instance |
+| `invoke_worker` | Invoke function on worker |
+| `delete_worker` | Remove worker instance |
+| `list_profiles` | List available profiles |
+| `switch_profile` | Switch active profile |
+| `new_app` | Create new application |
+| `build_app` | Build application |
+| `deploy_app` | Deploy application |
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Install from source
-cargo install --path .
+# Build from source
+cargo build --release --bin golem-mcp-server
 
-# Run from Cargo
-cargo run --bin golem-mcp-server -- --transport http --port 8080
-
-# Or build and run directly
-cargo build --release
-./target/release/golem-mcp-server --help
+# The binary will be at:
+# ../../target/release/golem-mcp-server
 ```
 
 ### Prerequisites
 
 - Rust 1.75+ with 2021 edition
-- Golem CLI installed and accessible in PATH
-- Port 1232 available (default, configurable)
+- Golem API access (no CLI dependency)
+- Environment variables for API configuration
 
 ### Build and Run
 
 ```bash
 # Build the MCP server
-cargo build
+cargo build --bin golem-mcp-server
 
-# Run the Golem MCP Server (stdio transport for Claude Desktop)
-cargo run --bin golem-mcp-server
+# Run with stdio transport (for Claude Desktop, etc.)
+cargo run --bin golem-mcp-server -- --stdio
 
-# Run with HTTP transport for web applications
-cargo run --bin golem-mcp-server -- --transport http --port 8080
+# Set environment variables
+export GOLEM_API_URL=https://api.golem.cloud
+export GOLEM_API_TOKEN=your-token-here
 
-# Run with verbose logging
-cargo run --bin golem-mcp-server -- --verbose
-
-# See all available options
-cargo run --bin golem-mcp-server -- --help
+# Run the server
+../../target/debug/golem-mcp-server --stdio
 ```
 
 **Available transports:**
-- `stdio` (default): For Claude Desktop integration - exposes all 60+ Golem tools
-- `http`: For web applications and remote access - full HTTP API
-
-**Examples for developers:**
-- `basic_usage`: Minimal library usage example
-- `progress_streaming_demo`: Progress feedback demonstration
+- `stdio`: Standard input/output for MCP clients like Claude Desktop
+- `http` (planned): HTTP transport for web applications
 
 ### Environment Variables
 
 ```bash
-# Optional: Specify custom golem-cli binary path
-export GOLEM_CLI_PATH=/path/to/golem-cli
+# Required: Golem API configuration
+export GOLEM_API_URL=https://api.golem.cloud
+export GOLEM_API_TOKEN=your-token-here
 
 # Optional: Configure logging level
-export RUST_LOG=debug
+export RUST_LOG=info
 ```
 
 ### Command Line Usage
