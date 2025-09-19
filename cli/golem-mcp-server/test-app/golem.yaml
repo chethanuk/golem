@@ -1,6 +1,0 @@
-# Golem Application Manifest
-app_name: test-app
-template: default
-components: 
-  - name: component
-    path: ./src/component

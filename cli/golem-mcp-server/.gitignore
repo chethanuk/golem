@@ -1,0 +1,46 @@
+# Logs
+*.log
+server*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.pytest_cache
+
+# Temporary directories
+temp/
+tmp/
+.tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+target/
+Cargo.lock
+
+# Test outputs
+test-results/
+test-output/
+
+# Archives
+*.tar.gz
+*.zip
+
+# Planning/documentation archives
+.plan_archive/
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary test files
+test_*.py
+validate_*.py
+verify_*.py
+*_test.py
+*_demo.*

@@ -1,4 +1,0 @@
-# Python test dependencies for Golem MCP Server E2E tests
-pydantic-ai>=0.1.0
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
